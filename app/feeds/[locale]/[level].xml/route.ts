@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET(_request: Request, { params }: { params: Promise<{ locale: string; level: string }> }) {
   const { locale, level } = await params;
-  const levelKey = levelSlugToKey(level);
+  const levelKey = levelSlugToKey(level.replace(/\.xml$/, ""));
   const appUrl = process.env.APP_URL || "http://localhost:3000";
 
   const config = await prisma.rssFeedConfig.findFirst({
