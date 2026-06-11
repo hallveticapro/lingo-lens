@@ -44,7 +44,7 @@ If `ADMIN_PASSWORD_HASH` is left as `replace-with-generated-hash`, the developme
 - `APP_URL`: set to the public URL of your deployment.
 - `OPENAI_API_KEY`: set a real key to enable OpenAI generation. Without it, the app uses mock generation.
 - `OPENAI_MODEL`: defaults to `gpt-5.1`; change it if that model is unavailable to your account.
-- `DATA_DIR`: host-side persistent data root. For this Unraid server, use `/mnt/user/appdata/lingo-lens`.
+- `DATA_DIR`: host-side persistent data root. For Unraid, set this to the app's folder under your appdata share.
 
 `REQUIRE_RIGHTS_APPROVAL_TO_PUBLISH=false` by default. The backend stores rights records, but rights fields are intentionally hidden from the MVP admin UI.
 
@@ -80,14 +80,14 @@ When `OPENAI_API_KEY` is missing or still set to `sk-replace-me`, deterministic 
 
 ## Deploy on Unraid
 
-1. Create an appdata folder: `/mnt/user/appdata/lingo-lens`.
+1. Create an app folder under your Unraid appdata share.
 2. Place this repo in that folder.
 3. Create `.env` from `.env.example`.
 4. Change the required secrets listed above.
 5. Set the host-side data root:
 
 ```env
-DATA_DIR=/mnt/user/appdata/lingo-lens
+DATA_DIR=<your-appdata-path>/lingo-lens
 UPLOAD_DIR=/app/uploads
 ```
 
@@ -96,7 +96,7 @@ UPLOAD_DIR=/app/uploads
 6. Make persistent folders:
 
 ```bash
-mkdir -p /mnt/user/appdata/lingo-lens/postgres /mnt/user/appdata/lingo-lens/uploads
+mkdir -p <your-appdata-path>/lingo-lens/postgres <your-appdata-path>/lingo-lens/uploads
 ```
 
 7. Start the stack:

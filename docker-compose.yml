@@ -13,7 +13,7 @@ services:
       timeout: 5s
       retries: 5
     volumes:
-      - ${DATA_DIR:-/mnt/user/appdata/lingo-lens}/postgres:/var/lib/postgresql/data
+      - ${DATA_DIR:-./data}/postgres:/var/lib/postgresql/data
 
   app:
     build:
@@ -34,4 +34,4 @@ services:
     ports:
       - "${PORT:-3000}:3000"
     volumes:
-      - ${DATA_DIR:-/mnt/user/appdata/lingo-lens}/uploads:/app/uploads
+      - ${DATA_DIR:-./data}/uploads:/app/uploads

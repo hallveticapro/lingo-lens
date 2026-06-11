@@ -26,7 +26,7 @@ LingoLens should feel like a premium editorial reading app, not a generic SaaS d
 - Validate form/API input with Zod.
 - Sanitize rendered Markdown.
 - Keep rights fields in the backend but hidden from admin UI until the rights workflow is designed.
-- Keep Docker Compose friendly to Unraid with `DATA_DIR` controlling host-side persistent data. Default it to `/mnt/user/appdata/lingo-lens`, with `${DATA_DIR}/postgres` and `${DATA_DIR}/uploads` mounted into the containers.
+- Keep Docker Compose friendly to Unraid with `DATA_DIR` controlling host-side persistent data. Keep examples generic; do not commit machine-specific appdata paths.
 
 ## Validation
 
