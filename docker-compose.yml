@@ -16,6 +16,7 @@ services:
       - ${DATA_DIR:-./data}/postgres:/var/lib/postgresql/data
 
   app:
+    image: ${IMAGE_REPO:-lingo-lens-app}:${IMAGE_TAG:-latest}
     build:
       context: .
       dockerfile: Dockerfile

@@ -37,6 +37,8 @@ If `ADMIN_PASSWORD_HASH` is left as `replace-with-generated-hash`, the developme
 ## Environment Variables To Change
 
 - `AUTH_SECRET`: set to a long random value.
+- `IMAGE_REPO`: set to the container image repository, such as `ghcr.io/<github-owner>/lingo-lens`.
+- `IMAGE_TAG`: set to the image tag to run, usually `latest` for the MVP.
 - `ADMIN_EMAIL`: set to your admin email.
 - `ADMIN_PASSWORD_HASH`: generate with `pnpm hash-password "your password"`.
 - `POSTGRES_PASSWORD`: set a strong database password.
@@ -105,8 +107,16 @@ mkdir -p <your-appdata-path>/lingo-lens/postgres <your-appdata-path>/lingo-lens/
 docker compose --env-file .env up -d --build
 ```
 
+To use a prebuilt GHCR image instead of building locally, set:
+
+```env
+IMAGE_REPO=ghcr.io/<github-owner>/lingo-lens
+IMAGE_TAG=latest
+```
+
 The compose file uses:
 
+- `${IMAGE_REPO}:${IMAGE_TAG}` for the app image name
 - `${DATA_DIR}/postgres:/var/lib/postgresql/data`
 - `${DATA_DIR}/uploads:/app/uploads`
 - host port `${PORT:-3000}`
