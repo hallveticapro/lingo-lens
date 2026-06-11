@@ -1,0 +1,345 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum TextDirection {
+  ltr
+  rtl
+}
+
+enum ContentType {
+  news_article
+  public_domain_story
+  original_story
+  lesson_text
+  other
+}
+
+enum ContentStatus {
+  draft
+  generating
+  needs_review
+  published
+  archived
+}
+
+enum RightsStatus {
+  unreviewed
+  original_owned
+  licensed
+  public_domain_verified
+  creative_commons_allowed
+  government_work_verified
+  summary_only
+  rejected
+  unknown
+  not_applicable
+}
+
+enum AdaptationStatus {
+  draft
+  generated
+  needs_review
+  published
+  archived
+}
+
+enum QaStatus {
+  not_checked
+  passed
+  warning
+  failed
+}
+
+enum GenerationJobType {
+  fact_bank
+  generate_adaptations
+  qa_check
+  regenerate_single_adaptation
+}
+
+enum GenerationJobStatus {
+  queued
+  running
+  succeeded
+  failed
+  canceled
+}
+
+model Locale {
+  id                         String               @id @default(uuid())
+  bcp47Tag                   String               @unique
+  languageCode               String
+  scriptCode                 String?
+  regionCode                 String?
+  displayNameEn              String
+  nativeName                 String?
+  direction                  TextDirection        @default(ltr)
+  segmentationStrategy       String               @default("whitespace")
+  supportsRubyAnnotations    Boolean              @default(false)
+  supportsRomanization       Boolean              @default(false)
+  defaultRomanizationSystem  String?
+  isEnabledAsSource          Boolean              @default(true)
+  isEnabledAsTarget          Boolean              @default(false)
+  isPublic                   Boolean              @default(false)
+  createdAt                  DateTime             @default(now())
+  updatedAt                  DateTime             @updatedAt
+  sourceContentItems         ContentItem[]
+  levelProfiles              LocaleLevelProfile[]
+  targetAdaptations          Adaptation[]
+  rssFeedConfigs             RssFeedConfig[]
+
+  @@map("locales")
+}
+
+model ReadingLevel {
+  id               String               @id @default(uuid())
+  key              String               @unique
+  displayName      String
+  shortDescription String
+  sortOrder        Int
+  isActive         Boolean              @default(true)
+  isPublic         Boolean              @default(true)
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+  levelProfiles    LocaleLevelProfile[]
+  adaptations      Adaptation[]
+  rssFeedConfigs   RssFeedConfig[]
+
+  @@map("reading_levels")
+}
+
+model LocaleLevelProfile {
+  id                        String       @id @default(uuid())
+  localeId                  String
+  readingLevelId            String
+  externalFrameworkMappings Json         @default("{}")
+  generationConstraints     Json         @default("{}")
+  vocabularyConstraints     Json         @default("{}")
+  scaffoldConfig            Json         @default("{}")
+  isGenerationEnabled       Boolean      @default(true)
+  isPublic                  Boolean      @default(true)
+  createdAt                 DateTime     @default(now())
+  updatedAt                 DateTime     @updatedAt
+  locale                    Locale       @relation(fields: [localeId], references: [id], onDelete: Cascade)
+  readingLevel              ReadingLevel @relation(fields: [readingLevelId], references: [id], onDelete: Cascade)
+
+  @@unique([localeId, readingLevelId])
+  @@map("locale_level_profiles")
+}
+
+model ContentItem {
+  id                          String               @id @default(uuid())
+  slug                        String               @unique
+  contentType                 ContentType
+  status                      ContentStatus        @default(draft)
+  sourceLocaleId              String
+  sourceTitle                 String
+  sourceSubtitle              String?
+  sourceBody                  String
+  sourceName                  String?
+  sourceUrl                   String?
+  originalAuthor              String?
+  originalPublicationDate     DateTime?
+  headerMediaAssetId          String?
+  internalNotes               String?
+  createdBy                   String?
+  publishedAt                 DateTime?
+  archivedAt                  DateTime?
+  createdAt                   DateTime             @default(now())
+  updatedAt                   DateTime             @updatedAt
+  sourceLocale                Locale               @relation(fields: [sourceLocaleId], references: [id])
+  headerMediaAsset            MediaAsset?          @relation(fields: [headerMediaAssetId], references: [id])
+  rightsRecord                ContentRightsRecord?
+  factBank                    FactBank?
+  adaptations                 Adaptation[]
+  generationJobs              GenerationJob[]
+
+  @@map("content_items")
+}
+
+model MediaAsset {
+  id                String         @id @default(uuid())
+  storageProvider   String
+  storageKey        String?
+  publicUrl         String?
+  mimeType          String?
+  fileSizeBytes     Int?
+  altText           String?
+  caption           String?
+  sourceUrl         String?
+  creatorName       String?
+  rightsStatus      RightsStatus   @default(unreviewed)
+  licenseName       String?
+  licenseUrl        String?
+  attributionText   String?
+  rightsNotes       String?
+  createdBy         String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  contentItems      ContentItem[]
+
+  @@map("media_assets")
+}
+
+model ContentRightsRecord {
+  id                String       @id @default(uuid())
+  contentItemId     String       @unique
+  textRightsStatus  RightsStatus @default(unreviewed)
+  imageRightsStatus RightsStatus @default(unreviewed)
+  licenseName       String?
+  licenseUrl        String?
+  attributionText   String?
+  rightsNotes       String?
+  reviewedBy        String?
+  reviewedAt        DateTime?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  contentItem       ContentItem  @relation(fields: [contentItemId], references: [id], onDelete: Cascade)
+
+  @@map("content_rights_records")
+}
+
+model FactBank {
+  id                  String       @id @default(uuid())
+  contentItemId       String       @unique
+  facts               Json         @default("[]")
+  entities            Json         @default("[]")
+  dates               Json         @default("[]")
+  numbers             Json         @default("[]")
+  quotes              Json         @default("[]")
+  sensitiveTopics     Json         @default("[]")
+  preservationNotes   Json         @default("[]")
+  generatedByJobId    String?
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+  contentItem         ContentItem  @relation(fields: [contentItemId], references: [id], onDelete: Cascade)
+
+  @@map("fact_banks")
+}
+
+model Adaptation {
+  id                            String               @id @default(uuid())
+  contentItemId                 String
+  targetLocaleId                String
+  readingLevelId                String
+  status                        AdaptationStatus     @default(draft)
+  title                         String
+  subtitle                      String?
+  summary                       String?
+  bodyMarkdown                  String
+  bodyBlocks                    Json                 @default("[]")
+  vocabulary                    Json                 @default("[]")
+  comprehensionQuestions        Json                 @default("[]")
+  annotations                   Json                 @default("[]")
+  contentWarning                String?
+  editorNotes                   String?
+  estimatedReadingTimeSeconds   Int?
+  estimatedDifficulty           Json                 @default("{}")
+  generationJobId               String?
+  qaStatus                      QaStatus             @default(not_checked)
+  qaReport                      Json                 @default("{}")
+  reviewedBy                    String?
+  reviewedAt                    DateTime?
+  publishedAt                   DateTime?
+  archivedAt                    DateTime?
+  createdAt                     DateTime             @default(now())
+  updatedAt                     DateTime             @updatedAt
+  contentItem                   ContentItem          @relation(fields: [contentItemId], references: [id], onDelete: Cascade)
+  targetLocale                  Locale               @relation(fields: [targetLocaleId], references: [id])
+  readingLevel                  ReadingLevel         @relation(fields: [readingLevelId], references: [id])
+  generationJob                 GenerationJob?       @relation(fields: [generationJobId], references: [id])
+  revisions                     AdaptationRevision[]
+
+  @@unique([contentItemId, targetLocaleId, readingLevelId])
+  @@map("adaptations")
+}
+
+model GenerationJob {
+  id                       String              @id @default(uuid())
+  contentItemId            String
+  jobType                  GenerationJobType
+  status                   GenerationJobStatus @default(queued)
+  targetLocaleId           String?
+  requestedReadingLevelIds Json                @default("[]")
+  provider                 String              @default("openai")
+  model                    String?
+  promptVersion            String?
+  inputTokens              Int?
+  outputTokens             Int?
+  estimatedCostCents       Int?
+  requestPayload           Json?
+  responsePayload          Json?
+  errorMessage             String?
+  startedAt                DateTime?
+  finishedAt               DateTime?
+  requestedBy              String?
+  createdAt                DateTime            @default(now())
+  updatedAt                DateTime            @updatedAt
+  contentItem              ContentItem         @relation(fields: [contentItemId], references: [id], onDelete: Cascade)
+  adaptations              Adaptation[]
+
+  @@map("generation_jobs")
+}
+
+model PromptTemplate {
+  id                 String   @id @default(uuid())
+  key                String
+  version            String
+  provider           String   @default("openai")
+  modelDefault       String?
+  systemInstructions String
+  userTemplate       String
+  outputSchema       Json     @default("{}")
+  isActive           Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@unique([key, version])
+  @@map("prompt_templates")
+}
+
+model AdaptationRevision {
+  id                     String     @id @default(uuid())
+  adaptationId           String
+  revisionNumber         Int
+  title                  String
+  subtitle               String?
+  summary                String?
+  bodyMarkdown           String
+  bodyBlocks             Json       @default("[]")
+  vocabulary             Json       @default("[]")
+  comprehensionQuestions Json       @default("[]")
+  annotations            Json       @default("[]")
+  changeReason           String?
+  changedBy              String?
+  createdAt              DateTime   @default(now())
+  adaptation             Adaptation @relation(fields: [adaptationId], references: [id], onDelete: Cascade)
+
+  @@unique([adaptationId, revisionNumber])
+  @@map("adaptation_revisions")
+}
+
+model RssFeedConfig {
+  id                 String       @id @default(uuid())
+  targetLocaleId     String
+  readingLevelId     String
+  slug               String       @unique
+  title              String
+  description        String
+  isEnabled          Boolean      @default(true)
+  includeFullContent Boolean      @default(false)
+  maxItems           Int          @default(25)
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+  targetLocale       Locale       @relation(fields: [targetLocaleId], references: [id], onDelete: Cascade)
+  readingLevel       ReadingLevel @relation(fields: [readingLevelId], references: [id], onDelete: Cascade)
+
+  @@unique([targetLocaleId, readingLevelId])
+  @@map("rss_feed_configs")
+}

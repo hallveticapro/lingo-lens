@@ -1,0 +1,37 @@
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: lingo-lens-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-lingo_lens}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+      POSTGRES_DB: ${POSTGRES_DB:-lingo_lens}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-lingo_lens} -d ${POSTGRES_DB:-lingo_lens}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: lingo-lens-app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      PORT: ${PORT:-3000}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://lingo_lens:change-me@db:5432/lingo_lens}
+      UPLOAD_DIR: ${UPLOAD_DIR:-/app/uploads}
+    ports:
+      - "${PORT:-3000}:3000"
+    volumes:
+      - ./data/uploads:/app/uploads

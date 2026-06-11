@@ -1,0 +1,163 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { BookOpen, Languages, Rss } from "lucide-react";
+import { DocumentLanguage } from "@/components/DocumentLanguage";
+import { Markdown } from "@/components/Markdown";
+import { PublicShell } from "@/components/PublicChrome";
+import { prisma } from "@/lib/prisma";
+import { levelKeyToSlug, levelSlugToKey } from "@/lib/level";
+import type { QuestionItem, VocabularyItem } from "@/lib/parsers";
+
+export const dynamic = "force-dynamic";
+
+type Params = {
+  locale: string;
+  level: string;
+  slug: string;
+};
+
+export default async function ReadingPage({ params }: { params: Promise<Params> }) {
+  const { locale, level, slug } = await params;
+  const levelKey = levelSlugToKey(level);
+  const adaptation = await prisma.adaptation.findFirst({
+    where: {
+      status: "published",
+      targetLocale: { bcp47Tag: locale, isPublic: true },
+      readingLevel: { key: levelKey, isPublic: true },
+      contentItem: { slug }
+    },
+    include: {
+      contentItem: { include: { headerMediaAsset: true, sourceLocale: true } },
+      targetLocale: true,
+      readingLevel: true
+    }
+  });
+
+  if (!adaptation) notFound();
+
+  const availableLevels = await prisma.adaptation.findMany({
+    where: {
+      contentItemId: adaptation.contentItemId,
+      targetLocaleId: adaptation.targetLocaleId,
+      status: "published"
+    },
+    include: { readingLevel: true },
+    orderBy: { readingLevel: { sortOrder: "asc" } }
+  });
+
+  const vocabulary = Array.isArray(adaptation.vocabulary)
+    ? (adaptation.vocabulary as VocabularyItem[])
+    : [];
+  const questions = Array.isArray(adaptation.comprehensionQuestions)
+    ? (adaptation.comprehensionQuestions as QuestionItem[])
+    : [];
+
+  return (
+    <PublicShell>
+      <DocumentLanguage lang={adaptation.targetLocale.bcp47Tag} dir={adaptation.targetLocale.direction} />
+      <div className="container reader-layout">
+        <article lang={adaptation.targetLocale.bcp47Tag} dir={adaptation.targetLocale.direction}>
+              <nav className="breadcrumb" aria-label="Breadcrumb">
+                <Link href="/">Home</Link>
+                <span>›</span>
+                <span>{adaptation.targetLocale.displayNameEn}</span>
+                <span>›</span>
+                <span>{adaptation.readingLevel.displayName}</span>
+              </nav>
+              <div className="chip-row" style={{ justifyContent: "center" }}>
+                <span className="badge">{adaptation.readingLevel.displayName}</span>
+                <span className="badge">{adaptation.targetLocale.bcp47Tag}</span>
+              </div>
+              <h1 className="article-title">{adaptation.title}</h1>
+              {adaptation.summary ? <p className="dek">{adaptation.summary}</p> : null}
+              <div className="meta-line">
+                <span>
+                  <BookOpen size={14} /> Source: {adaptation.contentItem.sourceName ?? "LingoLens"}
+                </span>
+                <span>Updated {adaptation.updatedAt.toLocaleDateString()}</span>
+              </div>
+
+              {adaptation.contentItem.headerMediaAsset?.publicUrl ? (
+                <>
+                  <img
+                    src={adaptation.contentItem.headerMediaAsset.publicUrl}
+                    alt={adaptation.contentItem.headerMediaAsset.altText ?? ""}
+                    style={{ borderRadius: 8, width: "100%", aspectRatio: "1.56", objectFit: "cover" }}
+                  />
+                  {adaptation.contentItem.headerMediaAsset.caption ? (
+                    <p className="caption">{adaptation.contentItem.headerMediaAsset.caption}</p>
+                  ) : null}
+                </>
+              ) : null}
+
+              <nav className="level-switcher" aria-label="Reading levels">
+                {availableLevels.map((item) => (
+                  <Link
+                    key={item.id}
+                    href={`/read/${adaptation.targetLocale.bcp47Tag}/${levelKeyToSlug(
+                      item.readingLevel.key
+                    )}/${adaptation.contentItem.slug}`}
+                    aria-current={item.readingLevel.key === adaptation.readingLevel.key ? "page" : undefined}
+                  >
+                    {item.readingLevel.displayName}
+                  </Link>
+                ))}
+              </nav>
+
+              <Markdown className="reader-body">{adaptation.bodyMarkdown}</Markdown>
+        </article>
+
+        <aside className="sidebar-stack" aria-label="Reading tools">
+              <section className="panel-card">
+                <h2>
+                  <Languages size={18} color="var(--terracotta)" /> Key Vocabulary
+                </h2>
+                <div className="definition-list">
+                  {vocabulary.map((item) => (
+                    <div className="definition-item" key={`${item.term}-${item.meaning_en}`}>
+                      <strong>{item.term}</strong>
+                      {item.part_of_speech ? <span className="chip">{item.part_of_speech}</span> : null}
+                      <p className="muted">{item.meaning_en}</p>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              <section className="panel-card">
+                <h2>Comprehension</h2>
+                <div className="definition-list">
+                  {questions.map((item, index) => (
+                    <details className="definition-item" key={item.question}>
+                      <summary>
+                        {index + 1}. {item.question}
+                      </summary>
+                      <p className="muted">{item.answer}</p>
+                    </details>
+                  ))}
+                </div>
+              </section>
+
+              <section className="panel-card" style={{ background: "var(--navy)", color: "white" }}>
+                <h2 style={{ color: "white" }}>Get More {adaptation.readingLevel.displayName} Texts</h2>
+                <p style={{ color: "var(--navy-soft)" }}>
+                  Subscribe to new {adaptation.readingLevel.displayName} Spanish articles.
+                </p>
+                <Link
+                  className="btn"
+                  style={{
+                    background: "var(--terracotta)",
+                    borderColor: "var(--terracotta)",
+                    color: "white"
+                  }}
+                  href={`/feeds/${adaptation.targetLocale.bcp47Tag}/${levelKeyToSlug(
+                    adaptation.readingLevel.key
+                  )}.xml`}
+                >
+                  <Rss size={16} /> Subscribe to RSS
+                </Link>
+              </section>
+        </aside>
+      </div>
+    </PublicShell>
+  );
+}

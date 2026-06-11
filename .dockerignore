@@ -1,0 +1,10 @@
+.git
+.next
+node_modules
+data
+uploads
+.env
+.env*.local
+coverage
+*.log
+.DS_Store

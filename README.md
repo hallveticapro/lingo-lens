@@ -1,0 +1,118 @@
+# LingoLens
+
+LingoLens is a Next.js App Router MVP for turning source texts into multilingual, leveled reading experiences. The first target locale is Latin American Spanish (`es-419`), but the data model uses locale and reading-level dimensions instead of language-specific columns.
+
+## Stack
+
+- Next.js App Router and TypeScript
+- PostgreSQL with Prisma
+- Zod input validation
+- Official OpenAI Node SDK, server-side only
+- Sanitized Markdown rendering
+- Docker and Docker Compose for Unraid
+
+## Local Setup
+
+```bash
+pnpm install
+cp .env.example .env
+pnpm hash-password "change-this-password"
+```
+
+Put the generated hash in `ADMIN_PASSWORD_HASH`, then set `AUTH_SECRET` to a long random string.
+
+For local Postgres with Docker:
+
+```bash
+docker compose --env-file .env up -d db
+pnpm prisma:push
+pnpm seed
+pnpm dev
+```
+
+Open `http://localhost:3000`. Admin login is at `/admin/login`.
+
+If `ADMIN_PASSWORD_HASH` is left as `replace-with-generated-hash`, the development fallback password is `admin123`. Do not deploy with that fallback.
+
+## Environment Variables To Change
+
+- `AUTH_SECRET`: set to a long random value.
+- `ADMIN_EMAIL`: set to your admin email.
+- `ADMIN_PASSWORD_HASH`: generate with `pnpm hash-password "your password"`.
+- `POSTGRES_PASSWORD`: set a strong database password.
+- `DATABASE_URL`: match your database host and password.
+- `APP_URL`: set to the public URL of your deployment.
+- `OPENAI_API_KEY`: set a real key to enable OpenAI generation. Without it, the app uses mock generation.
+- `OPENAI_MODEL`: defaults to `gpt-5.1`; change it if that model is unavailable to your account.
+
+`REQUIRE_RIGHTS_APPROVAL_TO_PUBLISH=false` by default. The backend stores rights records, but rights fields are intentionally hidden from the MVP admin UI.
+
+## Prisma
+
+```bash
+pnpm prisma:generate
+pnpm prisma:push
+pnpm seed
+```
+
+The seed creates:
+
+- `en-US` and `es-419`
+- four reading levels
+- four Spanish locale-level profiles
+- four Spanish RSS feed configs
+- one sample source item with all four published adaptations
+
+## OpenAI Generation
+
+Generation runs only on the server. The browser never receives `OPENAI_API_KEY`.
+
+The pipeline is:
+
+1. Store source content.
+2. Automatically create a hidden rights record.
+3. Extract or mock a fact bank.
+4. Generate each selected adaptation from `source content + fact bank`.
+5. Store reviewable adaptations with QA notes.
+
+When `OPENAI_API_KEY` is missing or still set to `sk-replace-me`, deterministic mock Spanish adaptations are created so the whole workflow remains usable.
+
+## Deploy on Unraid
+
+1. Create an app folder, for example `/mnt/user/appdata/lingo-lens`.
+2. Place this repo in that folder.
+3. Create `.env` from `.env.example`.
+4. Change the required secrets listed above.
+5. Make persistent folders:
+
+```bash
+mkdir -p data/postgres data/uploads
+```
+
+6. Start the stack:
+
+```bash
+docker compose --env-file .env up -d --build
+```
+
+The compose file uses:
+
+- `./data/postgres:/var/lib/postgresql/data`
+- `./data/uploads:/app/uploads`
+- host port `${PORT:-3000}`
+- `restart: unless-stopped`
+
+On container start, the app runs `prisma db push`, seeds idempotent starter data, then starts Next.js.
+
+## Useful Routes
+
+- `/` public homepage
+- `/read/es-419/beginner/tradiciones-de-dia-de-muertos` sample reading
+- `/feeds` feed directory
+- `/feeds/es-419/beginner.xml` RSS feed
+- `/admin/login` admin login
+- `/admin` content dashboard
+
+## Notes
+
+The MVP intentionally omits learner accounts, payments, classroom tools, scraping, audio, and full rights-management UI. Rights storage and publish gating support are present for later expansion.
