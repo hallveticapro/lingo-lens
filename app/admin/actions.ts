@@ -50,6 +50,27 @@ export async function clearGenerationErrorsAction() {
   revalidatePath("/admin");
 }
 
+async function queueGeneration(contentItemId: string, targetLocale: string, levels: string[]) {
+  await prisma.contentItem.update({
+    where: { id: contentItemId },
+    data: { status: "generating" }
+  });
+
+  void generateAdaptations(contentItemId, targetLocale, levels).catch((error) => {
+    console.error(
+      JSON.stringify({
+        level: "error",
+        scope: "generation",
+        message: "Queued generation failed",
+        contentItemId,
+        targetLocale,
+        levels,
+        error: error instanceof Error ? { name: error.name, message: error.message } : { message: String(error) }
+      })
+    );
+  });
+}
+
 function formPayload(formData: FormData) {
   return {
     sourceTitle: stringFromForm(formData, "sourceTitle"),
@@ -114,9 +135,9 @@ export async function createContentAction(formData: FormData) {
   });
 
   if (intent === "generate") {
-    await generateAdaptations(content.id, payload.targetLocale, payload.levels);
+    await queueGeneration(content.id, payload.targetLocale, payload.levels);
     revalidatePath("/admin");
-    redirect(`/admin/content/${content.id}/review`);
+    redirect("/admin?generation=queued");
   }
 
   revalidatePath("/admin");
@@ -165,9 +186,9 @@ export async function updateContentAction(contentId: string, formData: FormData)
   });
 
   if (intent === "generate") {
-    await generateAdaptations(contentId, payload.targetLocale, payload.levels);
+    await queueGeneration(contentId, payload.targetLocale, payload.levels);
     revalidatePath("/admin");
-    redirect(`/admin/content/${contentId}/review`);
+    redirect("/admin?generation=queued");
   }
 
   revalidatePath("/admin");

@@ -16,8 +16,14 @@ function formatJson(value: unknown) {
   return JSON.stringify(value, null, 2);
 }
 
-export default async function AdminDashboard() {
+type AdminDashboardProps = {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+};
+
+export default async function AdminDashboard({ searchParams }: AdminDashboardProps) {
   await requireAdmin();
+  const params = searchParams ? await searchParams : {};
+  const showGenerationQueuedToast = params.generation === "queued";
   const [items, published, drafts, review, failedJobCount, recentFailedJobs] = await Promise.all([
     prisma.contentItem.findMany({
       include: {
@@ -48,6 +54,12 @@ export default async function AdminDashboard() {
 
   return (
     <AdminShell>
+      {showGenerationQueuedToast ? (
+        <div className="toast-notice" role="status" aria-live="polite">
+          Article generation queued. You can keep working while versions are created.
+        </div>
+      ) : null}
+
       <div className="admin-header">
         <div>
           <h1 className="admin-title">Content Management</h1>

@@ -525,6 +525,22 @@ img {
   padding: 28px;
 }
 
+.toast-notice {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 20;
+  width: min(360px, calc(100vw - 48px));
+  padding: 16px 18px;
+  border: 1px solid var(--sage);
+  background: #f5faf2;
+  color: var(--navy-deep);
+  box-shadow: var(--shadow-soft);
+  font-family: var(--font-ui);
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
 .metric {
   font-family: var(--font-display);
   font-size: 58px;
@@ -827,6 +843,13 @@ details[open] > summary .icon-open {
 }
 
 @media (max-width: 700px) {
+  .toast-notice {
+    top: 16px;
+    right: 16px;
+    left: 16px;
+    width: auto;
+  }
+
   .container {
     width: min(100% - 40px, 1140px);
   }
