@@ -366,6 +366,7 @@ The audit found **no confirmed P0 issues**. Keep this phase as a release gate: i
   - Command: `pnpm exec tsc --noEmit --pretty false` or `pnpm typecheck` passes.
   - Browser smoke: screenshots or Playwright traces show homepage, reader, feeds, and admin login loading from test data.
   - File check: `rg "test:e2e|playwright" package.json playwright.config.* tests` confirms setup.
+  - 2026-06-12: Added Playwright with disposable local Postgres setup (`lingo_lens_e2e`), migration/seed/admin bootstrap, and smoke tests for homepage, articles, reader level switcher, feeds, admin login keyboard/error feedback, and dashboard search navigation. `pnpm test:e2e`, `pnpm lint`, `pnpm typecheck`, and `pnpm build` passed with known raw-image/NFT warnings.
 - **Validation command:**
   ```bash
   pnpm test:e2e
