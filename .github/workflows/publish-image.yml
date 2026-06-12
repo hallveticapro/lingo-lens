@@ -49,8 +49,8 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
-      - name: Test when available
-        run: pnpm run test --if-present
+      - name: Test
+        run: pnpm test
 
       - name: Build app
         run: pnpm build
