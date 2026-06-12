@@ -408,6 +408,7 @@ The audit found **no confirmed P0 issues**. Keep this phase as a release gate: i
   - Command: `pnpm build` passes.
   - If a database is available, command: `pnpm prisma migrate deploy` succeeds against a disposable DB.
   - If seeded data is available, DB query plan output is attached or summarized in the PR.
+  - 2026-06-12: Added compound indexes for content status/update date, public/RSS adaptation listing, content/locale adaptation lookups, and generation-job status/finish date. `rg "@@index" prisma/schema.prisma`, `pnpm prisma generate`, and `pnpm build` passed. Rehearsed all migrations against disposable local Postgres database `lingo_lens_migration_check` with `DATABASE_URL=postgresql://andrew@localhost:5432/lingo_lens_migration_check pnpm prisma migrate deploy`.
 - **Validation command:**
   ```bash
   pnpm prisma generate && pnpm build

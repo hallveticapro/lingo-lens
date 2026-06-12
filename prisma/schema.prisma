@@ -160,6 +160,7 @@ model ContentItem {
   adaptations                 Adaptation[]
   generationJobs              GenerationJob[]
 
+  @@index([status, updatedAt])
   @@map("content_items")
 }
 
@@ -258,6 +259,8 @@ model Adaptation {
   revisions                     AdaptationRevision[]
 
   @@unique([contentItemId, targetLocaleId, readingLevelId])
+  @@index([status, targetLocaleId, readingLevelId, publishedAt])
+  @@index([contentItemId, targetLocaleId, status])
   @@map("adaptations")
 }
 
@@ -288,6 +291,7 @@ model GenerationJob {
   contentItem              ContentItem         @relation(fields: [contentItemId], references: [id], onDelete: Cascade)
   adaptations              Adaptation[]
 
+  @@index([status, finishedAt])
   @@map("generation_jobs")
 }
 
