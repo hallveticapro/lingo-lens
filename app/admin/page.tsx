@@ -7,9 +7,18 @@ import { requireAdmin } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
+function formatJobType(jobType: string) {
+  return jobType.replaceAll("_", " ");
+}
+
+function formatErrorMessage(message: string | null) {
+  if (!message) return "No error details were captured.";
+  return message.length > 260 ? `${message.slice(0, 257)}...` : message;
+}
+
 export default async function AdminDashboard() {
   await requireAdmin();
-  const [items, published, drafts, review, failedJobs] = await Promise.all([
+  const [items, published, drafts, review, failedJobCount, recentFailedJobs] = await Promise.all([
     prisma.contentItem.findMany({
       include: {
         sourceLocale: true,
@@ -21,7 +30,20 @@ export default async function AdminDashboard() {
     prisma.contentItem.count({ where: { status: "published" } }),
     prisma.contentItem.count({ where: { status: "draft" } }),
     prisma.contentItem.count({ where: { status: "needs_review" } }),
-    prisma.generationJob.count({ where: { status: "failed" } })
+    prisma.generationJob.count({ where: { status: "failed" } }),
+    prisma.generationJob.findMany({
+      where: { status: "failed" },
+      include: {
+        contentItem: {
+          select: {
+            id: true,
+            sourceTitle: true
+          }
+        }
+      },
+      orderBy: { finishedAt: "desc" },
+      take: 5
+    })
   ]);
 
   return (
@@ -62,7 +84,7 @@ export default async function AdminDashboard() {
           <p className="kicker" style={{ color: "var(--error)" }}>
             Failed Gens
           </p>
-          <p className="metric">{failedJobs}</p>
+          <p className="metric">{failedJobCount}</p>
           <p style={{ color: "var(--error)" }}>
             <AlertCircle size={16} /> API errors
           </p>
@@ -131,6 +153,36 @@ export default async function AdminDashboard() {
           </tbody>
         </table>
       </section>
+
+      {recentFailedJobs.length > 0 ? (
+        <section className="admin-card failure-panel">
+          <div className="latest-heading">
+            <h2 className="section-title">Recent Generation Failures</h2>
+            <p className="muted" style={{ margin: 0 }}>
+              These messages also appear in Docker logs with <code>scope=generation</code>.
+            </p>
+          </div>
+          <div className="failure-list">
+            {recentFailedJobs.map((job) => (
+              <article className="failure-item" key={job.id}>
+                <div>
+                  <p className="kicker" style={{ color: "var(--error)" }}>
+                    {formatJobType(job.jobType)}
+                  </p>
+                  <h3>{job.contentItem.sourceTitle}</h3>
+                  <p className="muted">
+                    {job.finishedAt?.toLocaleString() ?? job.updatedAt.toLocaleString()} · {job.model ?? "No model recorded"}
+                  </p>
+                </div>
+                <p className="failure-message">{formatErrorMessage(job.errorMessage)}</p>
+                <Link className="btn btn-secondary" href={`/admin/content/${job.contentItem.id}/edit`}>
+                  Open
+                </Link>
+              </article>
+            ))}
+          </div>
+        </section>
+      ) : null}
     </AdminShell>
   );
 }

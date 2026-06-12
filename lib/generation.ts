@@ -44,6 +44,70 @@ function modelName() {
   return process.env.OPENAI_MODEL || "gpt-5.1";
 }
 
+function errorDetails(error: unknown) {
+  if (!(error instanceof Error)) {
+    return {
+      name: "UnknownError",
+      message: String(error)
+    };
+  }
+
+  const maybeApiError = error as Error & {
+    code?: unknown;
+    status?: unknown;
+    type?: unknown;
+    param?: unknown;
+    request_id?: unknown;
+    requestID?: unknown;
+  };
+
+  const details = {
+    name: error.name,
+    message: error.message,
+    code: typeof maybeApiError.code === "string" ? maybeApiError.code : undefined,
+    status: typeof maybeApiError.status === "number" ? maybeApiError.status : undefined,
+    type: typeof maybeApiError.type === "string" ? maybeApiError.type : undefined,
+    param: typeof maybeApiError.param === "string" ? maybeApiError.param : undefined,
+    requestId:
+      typeof maybeApiError.request_id === "string"
+        ? maybeApiError.request_id
+        : typeof maybeApiError.requestID === "string"
+          ? maybeApiError.requestID
+          : undefined,
+    stack: process.env.NODE_ENV === "production" ? undefined : error.stack
+  };
+
+  return Object.fromEntries(Object.entries(details).filter(([, value]) => value !== undefined));
+}
+
+function errorMessage(error: unknown, fallback: string) {
+  const details = errorDetails(error);
+  return typeof details.message === "string" && details.message ? details.message : fallback;
+}
+
+function logGenerationError(message: string, context: Record<string, unknown>, error: unknown) {
+  console.error(
+    JSON.stringify({
+      level: "error",
+      scope: "generation",
+      message,
+      ...context,
+      error: errorDetails(error)
+    })
+  );
+}
+
+function logGenerationInfo(message: string, context: Record<string, unknown>) {
+  console.info(
+    JSON.stringify({
+      level: "info",
+      scope: "generation",
+      message,
+      ...context
+    })
+  );
+}
+
 function mockFactBank(sourceTitle: string, sourceBody: string): FactBankPayload {
   const sentences = sourceBody
     .split(/[.!?]\s+/)
@@ -146,6 +210,13 @@ export async function ensureFactBank(contentItemId: string) {
     }
   });
 
+  logGenerationInfo("Fact bank generation started", {
+    jobId: job.id,
+    contentItemId,
+    model: modelName(),
+    provider: configuredApiKey() ? "openai" : "mock"
+  });
+
   try {
     const client = openaiClient();
     let parsed = mockFactBank(content.sourceTitle, content.sourceBody);
@@ -196,13 +267,21 @@ export async function ensureFactBank(contentItemId: string) {
       data: { status: "succeeded", finishedAt: new Date() }
     });
 
+    logGenerationInfo("Fact bank generation succeeded", {
+      jobId: job.id,
+      contentItemId,
+      provider: client ? "openai" : "mock"
+    });
+
     return factBank;
   } catch (error) {
+    logGenerationError("Fact bank generation failed", { jobId: job.id, contentItemId, model: modelName() }, error);
     await prisma.generationJob.update({
       where: { id: job.id },
       data: {
         status: "failed",
-        errorMessage: error instanceof Error ? error.message : "Unknown fact bank error",
+        errorMessage: errorMessage(error, "Unknown fact bank error"),
+        responsePayload: { error: errorDetails(error) },
         finishedAt: new Date()
       }
     });
@@ -251,7 +330,22 @@ export async function generateAdaptations(contentItemId: string, targetLocaleTag
 
   try {
     const client = openaiClient();
+    logGenerationInfo("Adaptation generation started", {
+      jobId: job.id,
+      contentItemId,
+      targetLocaleTag,
+      levelKeys,
+      model: modelName(),
+      provider: client ? "openai" : "mock"
+    });
     for (const level of levels) {
+      logGenerationInfo("Adaptation level generation started", {
+        jobId: job.id,
+        contentItemId,
+        targetLocaleTag,
+        readingLevel: level.key,
+        provider: client ? "openai" : "mock"
+      });
       const profile = await prisma.localeLevelProfile.findUnique({
         where: {
           localeId_readingLevelId: {
@@ -362,6 +456,14 @@ export async function generateAdaptations(contentItemId: string, targetLocaleTag
           changedBy: "system"
         }
       });
+
+      logGenerationInfo("Adaptation level generation succeeded", {
+        jobId: job.id,
+        contentItemId,
+        targetLocaleTag,
+        readingLevel: level.key,
+        adaptationId: created.id
+      });
     }
 
     await prisma.generationJob.update({
@@ -372,12 +474,24 @@ export async function generateAdaptations(contentItemId: string, targetLocaleTag
       where: { id: contentItemId },
       data: { status: "needs_review" }
     });
+    logGenerationInfo("Adaptation generation succeeded", {
+      jobId: job.id,
+      contentItemId,
+      targetLocaleTag,
+      levelKeys
+    });
   } catch (error) {
+    logGenerationError(
+      "Adaptation generation failed",
+      { jobId: job.id, contentItemId, targetLocaleTag, levelKeys, model: modelName() },
+      error
+    );
     await prisma.generationJob.update({
       where: { id: job.id },
       data: {
         status: "failed",
-        errorMessage: error instanceof Error ? error.message : "Unknown generation error",
+        errorMessage: errorMessage(error, "Unknown generation error"),
+        responsePayload: { error: errorDetails(error) },
         finishedAt: new Date()
       }
     });
