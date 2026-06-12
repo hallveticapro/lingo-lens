@@ -79,6 +79,12 @@ test("admin content and review forms show validation recovery", async ({ page })
     "aria-current",
     "page"
   );
+  await expect(page.getByLabel("Source Language")).toContainText("English (United States)");
+  await expect(page.getByLabel("Target Locale")).toContainText("Spanish (Latin American)");
+  await expect(page.getByText("Super Beginner")).toBeVisible();
+  await expect(page.getByText("Beginner", { exact: true })).toBeVisible();
+  await expect(page.getByText("Intermediate")).toBeVisible();
+  await expect(page.getByText("Natural", { exact: true })).toBeVisible();
   await page.getByLabel("Source Title").fill("No");
   await page.getByLabel("Source Text").fill("short");
   await page.getByRole("button", { name: "Save Draft" }).click();

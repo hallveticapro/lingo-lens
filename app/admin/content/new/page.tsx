@@ -3,6 +3,7 @@ import { AdminShell } from "@/components/AdminChrome";
 import { ContentForm } from "@/components/ContentForm";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { bootstrapReferenceData } from "@/lib/reference-data";
 
 export const dynamic = "force-dynamic";
 
@@ -10,14 +11,29 @@ type SearchParams = {
   validation?: string;
 };
 
-export default async function NewContentPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
-  await requireAdmin();
-  const query = await searchParams;
-  const [locales, targetLocales, levels] = await Promise.all([
+async function formReferenceData() {
+  let [locales, targetLocales, levels] = await Promise.all([
     prisma.locale.findMany({ where: { isEnabledAsSource: true }, orderBy: { displayNameEn: "asc" } }),
     prisma.locale.findMany({ where: { isEnabledAsTarget: true }, orderBy: { displayNameEn: "asc" } }),
     prisma.readingLevel.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" } })
   ]);
+
+  if (locales.length === 0 || targetLocales.length === 0 || levels.length === 0) {
+    await bootstrapReferenceData(prisma);
+    [locales, targetLocales, levels] = await Promise.all([
+      prisma.locale.findMany({ where: { isEnabledAsSource: true }, orderBy: { displayNameEn: "asc" } }),
+      prisma.locale.findMany({ where: { isEnabledAsTarget: true }, orderBy: { displayNameEn: "asc" } }),
+      prisma.readingLevel.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" } })
+    ]);
+  }
+
+  return { locales, targetLocales, levels };
+}
+
+export default async function NewContentPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
+  await requireAdmin();
+  const query = await searchParams;
+  const { locales, targetLocales, levels } = await formReferenceData();
 
   return (
     <AdminShell>
