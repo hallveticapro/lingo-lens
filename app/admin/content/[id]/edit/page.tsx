@@ -6,9 +6,20 @@ import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
-export default async function EditContentPage({ params }: { params: Promise<{ id: string }> }) {
+type SearchParams = {
+  validation?: string;
+};
+
+export default async function EditContentPage({
+  params,
+  searchParams
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<SearchParams>;
+}) {
   await requireAdmin();
   const { id } = await params;
+  const query = await searchParams;
   const [content, locales, targetLocales, levels] = await Promise.all([
     prisma.contentItem.findUniqueOrThrow({
       where: { id },
@@ -32,6 +43,11 @@ export default async function EditContentPage({ params }: { params: Promise<{ id
           targetLocales={targetLocales}
           levels={levels}
           content={content}
+          errorMessage={
+            query.validation === "content"
+              ? "Check the source title, source text, URLs, and selected levels before saving."
+              : undefined
+          }
         />
       </div>
     </AdminShell>

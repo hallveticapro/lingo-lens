@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { BookOpen, Rss } from "lucide-react";
+import { PublicNavLinks } from "@/components/PublicNavLinks";
 
 export function PublicHeader() {
   return (
@@ -12,8 +13,7 @@ export function PublicHeader() {
           LingoLens
         </Link>
         <nav className="nav-links" aria-label="Primary navigation">
-          <Link href="/articles">Articles</Link>
-          <Link href="/feeds">RSS</Link>
+          <PublicNavLinks />
         </nav>
       </div>
     </header>

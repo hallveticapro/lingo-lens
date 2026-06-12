@@ -5,8 +5,12 @@ const webUrlSchema = z
   .trim()
   .url("Use a valid URL.")
   .refine((value) => {
-    const protocol = new URL(value).protocol;
-    return protocol === "http:" || protocol === "https:";
+    try {
+      const protocol = new URL(value).protocol;
+      return protocol === "http:" || protocol === "https:";
+    } catch {
+      return false;
+    }
   }, "Use an http or https URL.");
 
 const optionalWebUrlSchema = webUrlSchema.optional().or(z.literal(""));

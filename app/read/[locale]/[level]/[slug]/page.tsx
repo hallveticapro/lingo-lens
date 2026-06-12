@@ -101,6 +101,13 @@ export default async function ReadingPage({ params }: { params: Promise<Params> 
         </article>
 
         <aside className="sidebar-stack" aria-label="Reading tools">
+              {vocabulary.length === 0 && questions.length === 0 ? (
+                <section className="panel-card">
+                  <h2>Reading Tools</h2>
+                  <p className="muted">Vocabulary and comprehension prompts are not available for this version yet.</p>
+                </section>
+              ) : null}
+              {vocabulary.length > 0 ? (
               <section className="panel-card">
                 <h2>
                   <Languages size={18} color="var(--terracotta)" /> Key Vocabulary
@@ -115,7 +122,9 @@ export default async function ReadingPage({ params }: { params: Promise<Params> 
                   ))}
                 </div>
               </section>
+              ) : null}
 
+              {questions.length > 0 ? (
               <section className="panel-card">
                 <h2>Comprehension</h2>
                 <div className="definition-list">
@@ -129,6 +138,7 @@ export default async function ReadingPage({ params }: { params: Promise<Params> 
                   ))}
                 </div>
               </section>
+              ) : null}
 
               <section className="panel-card" style={{ background: "var(--navy)", color: "white" }}>
                 <h2 style={{ color: "white" }}>Get More {adaptation.readingLevel.displayName} Texts</h2>

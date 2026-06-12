@@ -9,12 +9,20 @@ type ContentFormProps = {
   targetLocales: Locale[];
   levels: ReadingLevel[];
   content?: ContentWithMedia;
+  errorMessage?: string;
 };
 
-export function ContentForm({ action, locales, targetLocales, levels, content }: ContentFormProps) {
+export function ContentForm({ action, locales, targetLocales, levels, content, errorMessage }: ContentFormProps) {
+  const hasError = Boolean(errorMessage);
+
   return (
     <form className="form-card" action={action} data-generation-form="true">
       <GenerationSubmitToast />
+      {errorMessage ? (
+        <p className="form-error form-error-banner" id="content-form-error" role="alert" aria-live="polite">
+          {errorMessage}
+        </p>
+      ) : null}
       <div className="form-grid">
         <div className="field full">
           <label htmlFor="sourceTitle">Source Title</label>
@@ -24,6 +32,8 @@ export function ContentForm({ action, locales, targetLocales, levels, content }:
             name="sourceTitle"
             defaultValue={content?.sourceTitle}
             placeholder="e.g., The Future of Sustainable Architecture"
+            aria-describedby={hasError ? "content-form-error" : undefined}
+            aria-invalid={hasError ? true : undefined}
             required
           />
         </div>
@@ -105,6 +115,8 @@ export function ContentForm({ action, locales, targetLocales, levels, content }:
             name="sourceBody"
             placeholder="Paste article content here..."
             defaultValue={content?.sourceBody}
+            aria-describedby={hasError ? "content-form-error" : undefined}
+            aria-invalid={hasError ? true : undefined}
             required
           />
         </div>

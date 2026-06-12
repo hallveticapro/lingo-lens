@@ -21,6 +21,10 @@ export function ReadingLevelSwitcher({ levels }: { levels: LevelLink[] }) {
   function onNavigate(event: MouseEvent<HTMLAnchorElement>, href: string, isCurrent: boolean) {
     if (isCurrent || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     event.preventDefault();
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      router.push(href);
+      return;
+    }
     document.documentElement.classList.add("reader-leaving");
     window.setTimeout(() => {
       router.push(href);

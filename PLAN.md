@@ -532,6 +532,7 @@ The audit found **no confirmed P0 issues**. Keep this phase as a release gate: i
   - Browser smoke: submit invalid admin content/review forms and verify visible errors.
   - Browser smoke: emulate `prefers-reduced-motion` and verify motion is reduced.
   - Browser smoke or test fixture: adaptation with empty vocabulary/comprehension does not show blank panels.
+  - 2026-06-12: Added route-aware public/admin nav links with `aria-current`, visible admin content/review validation recovery, field-level review validation hints, reduced-motion CSS and reader switcher handling, and reader empty-state handling for missing vocabulary/comprehension. Tightened `test:e2e` to rebuild before `next start`, added E2E coverage for nav/form/motion checks, and fixed optional blank URL validation so form recovery does not crash. Focused `pnpm test -- validators` and `pnpm test:e2e` passed; the E2E build still reports the known Turbopack NFT warning.
 - **Validation command:**
   ```bash
   pnpm lint && pnpm exec tsc --noEmit --pretty false && pnpm build

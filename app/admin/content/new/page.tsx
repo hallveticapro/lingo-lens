@@ -6,8 +6,13 @@ import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
-export default async function NewContentPage() {
+type SearchParams = {
+  validation?: string;
+};
+
+export default async function NewContentPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   await requireAdmin();
+  const query = await searchParams;
   const [locales, targetLocales, levels] = await Promise.all([
     prisma.locale.findMany({ where: { isEnabledAsSource: true }, orderBy: { displayNameEn: "asc" } }),
     prisma.locale.findMany({ where: { isEnabledAsTarget: true }, orderBy: { displayNameEn: "asc" } }),
@@ -21,7 +26,17 @@ export default async function NewContentPage() {
         <p className="muted" style={{ fontSize: 18 }}>
           Import a source text and configure generation parameters for LingoLens learners.
         </p>
-        <ContentForm action={createContentAction} locales={locales} targetLocales={targetLocales} levels={levels} />
+        <ContentForm
+          action={createContentAction}
+          locales={locales}
+          targetLocales={targetLocales}
+          levels={levels}
+          errorMessage={
+            query.validation === "content"
+              ? "Check the source title, source text, URLs, and selected levels before saving."
+              : undefined
+          }
+        />
       </div>
     </AdminShell>
   );

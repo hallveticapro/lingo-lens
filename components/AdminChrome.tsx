@@ -1,7 +1,8 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { BookOpenText, FilePlus2, LayoutDashboard, LogOut, Settings } from "lucide-react";
+import { LogOut, Settings } from "lucide-react";
 import { logoutAction } from "@/app/admin/actions";
+import { AdminNavLinks } from "@/components/AdminNavLinks";
 
 export function AdminShell({ children }: { children: ReactNode }) {
   return (
@@ -14,15 +15,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
           </p>
         </div>
         <nav className="admin-nav" aria-label="Admin navigation">
-          <Link href="/admin">
-            <LayoutDashboard size={20} /> Dashboard
-          </Link>
-          <Link href="/admin/content">
-            <BookOpenText size={20} /> Content List
-          </Link>
-          <Link href="/admin/content/new">
-            <FilePlus2 size={20} /> New Content
-          </Link>
+          <AdminNavLinks />
         </nav>
         <div className="admin-nav" style={{ marginTop: "auto" }}>
           <Link href="/">

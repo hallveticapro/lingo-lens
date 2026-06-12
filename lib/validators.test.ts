@@ -16,6 +16,10 @@ describe("contentFormSchema URL validation", () => {
     expect(contentFormSchema.safeParse({ ...basePayload, headerImageUrl: "http://example.com/image.jpg" }).success).toBe(true);
   });
 
+  it("accepts blank optional URL fields", () => {
+    expect(contentFormSchema.safeParse({ ...basePayload, sourceUrl: "", headerImageUrl: "" }).success).toBe(true);
+  });
+
   it("rejects non-http remote URLs", () => {
     for (const url of ["file:///etc/passwd", "ftp://example.com/file.jpg", "data:text/plain,hello"]) {
       expect(contentFormSchema.safeParse({ ...basePayload, headerImageUrl: url }).success).toBe(false);

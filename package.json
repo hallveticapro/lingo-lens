@@ -11,7 +11,7 @@
     "typecheck": "tsc --noEmit --pretty false",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "tsx tests/e2e/global-setup.ts && playwright test",
+    "test:e2e": "tsx tests/e2e/global-setup.ts && pnpm build && playwright test",
     "audit": "pnpm audit --audit-level low",
     "prisma": "prisma",
     "prisma:generate": "prisma generate",

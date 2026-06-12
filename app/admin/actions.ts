@@ -98,7 +98,9 @@ function formPayload(formData: FormData) {
 
 export async function createContentAction(formData: FormData) {
   const session = await requireAdmin();
-  const payload = contentFormSchema.parse(formPayload(formData));
+  const parsedPayload = contentFormSchema.safeParse(formPayload(formData));
+  if (!parsedPayload.success) redirect("/admin/content/new?validation=content");
+  const payload = parsedPayload.data;
   const intent = stringFromForm(formData, "intent");
   const sourceLocale = await prisma.locale.findUniqueOrThrow({ where: { bcp47Tag: payload.sourceLocale } });
   let slug = slugify(payload.sourceTitle);
@@ -154,7 +156,9 @@ export async function createContentAction(formData: FormData) {
 
 export async function updateContentAction(contentId: string, formData: FormData) {
   const session = await requireAdmin();
-  const payload = contentFormSchema.parse(formPayload(formData));
+  const parsedPayload = contentFormSchema.safeParse(formPayload(formData));
+  if (!parsedPayload.success) redirect(`/admin/content/${contentId}/edit?validation=content`);
+  const payload = parsedPayload.data;
   const intent = stringFromForm(formData, "intent");
   const sourceLocale = await prisma.locale.findUniqueOrThrow({ where: { bcp47Tag: payload.sourceLocale } });
 
@@ -216,7 +220,12 @@ export async function updateContentAction(contentId: string, formData: FormData)
 
 export async function saveAdaptationAction(adaptationId: string, formData: FormData) {
   const session = await requireAdmin();
-  const parsed = adaptationEditSchema.parse({
+  const current = await prisma.adaptation.findUniqueOrThrow({
+    where: { id: adaptationId },
+    include: { _count: { select: { revisions: true } } }
+  });
+
+  const parsedPayload = adaptationEditSchema.safeParse({
     title: stringFromForm(formData, "title"),
     subtitle: stringFromForm(formData, "subtitle"),
     summary: stringFromForm(formData, "summary"),
@@ -225,11 +234,10 @@ export async function saveAdaptationAction(adaptationId: string, formData: FormD
     questionsText: stringFromForm(formData, "questionsText"),
     editorNotes: stringFromForm(formData, "editorNotes")
   });
-
-  const current = await prisma.adaptation.findUniqueOrThrow({
-    where: { id: adaptationId },
-    include: { _count: { select: { revisions: true } } }
-  });
+  if (!parsedPayload.success) {
+    redirect(`/admin/content/${current.contentItemId}/review?level=${current.readingLevelId}&validation=review`);
+  }
+  const parsed = parsedPayload.data;
 
   const updated = await prisma.adaptation.update({
     where: { id: adaptationId },

@@ -17,6 +17,7 @@ export const dynamic = "force-dynamic";
 
 type SearchParams = {
   level?: string;
+  validation?: string;
 };
 
 export default async function ReviewPage({
@@ -42,6 +43,7 @@ export default async function ReviewPage({
   const selected =
     content.adaptations.find((adaptation) => adaptation.readingLevelId === query.level) ??
     content.adaptations[0];
+  const hasValidationError = query.validation === "review";
 
   return (
     <AdminShell>
@@ -86,9 +88,27 @@ export default async function ReviewPage({
 
           <div className="review-layout">
             <form className="form-card" action={saveAdaptationAction.bind(null, selected.id)}>
+              {hasValidationError ? (
+                <p className="form-error form-error-banner" id="review-form-error" role="alert" aria-live="polite">
+                  Add an article title and at least 20 characters of article body before saving.
+                </p>
+              ) : null}
               <div className="field">
                 <label htmlFor="title">Article Title</label>
-                <input className="input" id="title" name="title" defaultValue={selected.title} required />
+                <input
+                  className="input"
+                  id="title"
+                  name="title"
+                  defaultValue={selected.title}
+                  aria-describedby={hasValidationError ? "title-error review-form-error" : undefined}
+                  aria-invalid={hasValidationError ? true : undefined}
+                  required
+                />
+                {hasValidationError ? (
+                  <p className="form-error" id="title-error">
+                    Article title is required.
+                  </p>
+                ) : null}
               </div>
               <div className="field" style={{ marginTop: 18 }}>
                 <label htmlFor="summary">Summary / Meta Description</label>
@@ -101,8 +121,15 @@ export default async function ReviewPage({
                   id="bodyMarkdown"
                   name="bodyMarkdown"
                   defaultValue={selected.bodyMarkdown}
+                  aria-describedby={hasValidationError ? "bodyMarkdown-error review-form-error" : undefined}
+                  aria-invalid={hasValidationError ? true : undefined}
                   required
                 />
+                {hasValidationError ? (
+                  <p className="form-error" id="bodyMarkdown-error">
+                    Article body must be at least 20 characters.
+                  </p>
+                ) : null}
               </div>
               <div className="field" style={{ marginTop: 34, borderTop: "1px solid var(--surface-highest)", paddingTop: 30 }}>
                 <h2 className="section-title" style={{ fontSize: 28 }}>
