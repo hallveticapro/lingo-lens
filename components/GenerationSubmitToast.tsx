@@ -19,6 +19,12 @@ export function GenerationSubmitToast() {
     return () => document.removeEventListener("submit", onSubmit);
   }, []);
 
+  useEffect(() => {
+    if (!visible) return;
+    const timeout = window.setTimeout(() => setVisible(false), 15000);
+    return () => window.clearTimeout(timeout);
+  }, [visible]);
+
   if (!visible) return null;
 
   return (

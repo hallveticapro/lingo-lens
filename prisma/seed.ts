@@ -155,12 +155,15 @@ async function main() {
 
   const media = await prisma.mediaAsset.upsert({
     where: { id: "00000000-0000-4000-8000-000000000001" },
-    update: {},
+    update: {
+      sourceUrl: "https://images.unsplash.com/photo-1508519829430-40f7d7d161b4?auto=format&fit=crop&w=1400&q=80"
+    },
     create: {
       id: "00000000-0000-4000-8000-000000000001",
       storageProvider: "external",
       publicUrl:
         "https://images.unsplash.com/photo-1508519829430-40f7d7d161b4?auto=format&fit=crop&w=1400&q=80",
+      sourceUrl: "https://images.unsplash.com/photo-1508519829430-40f7d7d161b4?auto=format&fit=crop&w=1400&q=80",
       altText: "Bright orange marigold flowers and candles for Día de Muertos.",
       caption: "A traditional altar uses candles and cempasúchil flowers to welcome memory."
     }
@@ -267,6 +270,7 @@ async function main() {
   };
 
   for (const [key, adaptation] of Object.entries(sampleAdaptations)) {
+    const imageCaption = "Un altar tradicional usa velas y flores de cempasúchil para recibir la memoria.";
     await prisma.adaptation.upsert({
       where: {
         contentItemId_targetLocaleId_readingLevelId: {
@@ -275,7 +279,7 @@ async function main() {
           readingLevelId: levelRows.get(key)!
         }
       },
-      update: {},
+      update: { imageCaption },
       create: {
         contentItemId: content.id,
         targetLocaleId: spanish.id,
@@ -283,6 +287,7 @@ async function main() {
         status: "published",
         title: adaptation.title,
         summary: adaptation.summary,
+        imageCaption,
         bodyMarkdown: adaptation.bodyMarkdown,
         bodyBlocks: adaptation.bodyMarkdown.split("\n\n").map((text) => ({ type: "paragraph", text })),
         vocabulary: adaptation.vocabulary,

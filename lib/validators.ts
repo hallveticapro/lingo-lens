@@ -11,6 +11,7 @@ export const contentFormSchema = z.object({
   originalPublicationDate: z.string().trim().optional(),
   headerImageUrl: z.string().trim().url("Use a valid image URL.").optional().or(z.literal("")),
   imageAltText: z.string().trim().optional(),
+  imageCaption: z.string().trim().optional(),
   internalNotes: z.string().trim().optional(),
   sourceBody: z.string().trim().min(50, "Paste at least 50 characters of source text."),
   targetLocale: z.string().trim().min(2).default("es-419"),

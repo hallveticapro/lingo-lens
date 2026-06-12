@@ -86,12 +86,16 @@ export function ContentForm({ action, locales, targetLocales, levels, content }:
             id="headerImageUrl"
             name="headerImageUrl"
             type="url"
-            defaultValue={content?.headerMediaAsset?.publicUrl ?? ""}
+            defaultValue={content?.headerMediaAsset?.sourceUrl ?? content?.headerMediaAsset?.publicUrl ?? ""}
           />
         </div>
         <div className="field">
           <label htmlFor="imageAltText">Image Alt Text</label>
           <input className="input" id="imageAltText" name="imageAltText" defaultValue={content?.headerMediaAsset?.altText ?? ""} />
+        </div>
+        <div className="field full">
+          <label htmlFor="imageCaption">Image Caption</label>
+          <input className="input" id="imageCaption" name="imageCaption" defaultValue={content?.headerMediaAsset?.caption ?? ""} />
         </div>
         <div className="field full">
           <label htmlFor="sourceBody">Source Text</label>

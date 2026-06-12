@@ -60,6 +60,7 @@ export default async function ReadingPage({ params }: { params: Promise<Params> 
       item.readingLevel.key
     )}/${adaptation.contentItem.slug}`
   }));
+  const imageCaption = adaptation.imageCaption ?? adaptation.contentItem.headerMediaAsset?.caption;
 
   return (
     <PublicShell>
@@ -90,8 +91,8 @@ export default async function ReadingPage({ params }: { params: Promise<Params> 
                     alt={adaptation.contentItem.headerMediaAsset.altText ?? ""}
                     style={{ borderRadius: 8, width: "100%", aspectRatio: "1.56", objectFit: "cover" }}
                   />
-                  {adaptation.contentItem.headerMediaAsset.caption ? (
-                    <p className="caption">{adaptation.contentItem.headerMediaAsset.caption}</p>
+                  {imageCaption ? (
+                    <p className="caption">{imageCaption}</p>
                   ) : null}
                 </>
               ) : null}

@@ -232,6 +232,7 @@ model Adaptation {
   title                         String
   subtitle                      String?
   summary                       String?
+  imageCaption                  String?
   bodyMarkdown                  String
   bodyBlocks                    Json                 @default("[]")
   vocabulary                    Json                 @default("[]")
@@ -322,6 +323,7 @@ model AdaptationRevision {
   title                  String
   subtitle               String?
   summary                String?
+  imageCaption           String?
   bodyMarkdown           String
   bodyBlocks             Json       @default("[]")
   vocabulary             Json       @default("[]")

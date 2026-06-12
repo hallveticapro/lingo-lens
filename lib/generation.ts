@@ -47,6 +47,7 @@ const generatedSchema = z.object({
   title: z.string(),
   subtitle: z.string().nullable().optional(),
   summary: z.string().nullable().optional(),
+  image_caption: z.string().nullable().optional(),
   body_markdown: z.string(),
   body_blocks: flexibleRecordArray((text) => ({ type: "paragraph", text })),
   vocabulary: flexibleRecordArray((text) => ({ term: text })),
@@ -191,6 +192,7 @@ function mockAdaptation(levelKey: string, sourceTitle: string, factBank: FactBan
     title: `${sourceTitle} (${label})`,
     subtitle: null,
     summary: `Adaptación ${label.toLowerCase()} en español latinoamericano.`,
+    image_caption: null,
     body_markdown: bodies[levelKey] ?? bodies.beginner,
     body_blocks: [{ type: "paragraph", text: bodies[levelKey] ?? bodies.beginner }],
     vocabulary: [
@@ -331,7 +333,8 @@ export async function ensureFactBank(contentItemId: string) {
 
 export async function generateAdaptations(contentItemId: string, targetLocaleTag: string, levelKeys: string[]) {
   const content = await prisma.contentItem.findUniqueOrThrow({
-    where: { id: contentItemId }
+    where: { id: contentItemId },
+    include: { headerMediaAsset: true }
   });
   const targetLocale = await prisma.locale.findUniqueOrThrow({ where: { bcp47Tag: targetLocaleTag } });
   const levels = await prisma.readingLevel.findMany({
@@ -416,12 +419,13 @@ export async function generateAdaptations(contentItemId: string, targetLocaleTag
               content: JSON.stringify({
                 source_title: content.sourceTitle,
                 source_body: content.sourceBody,
+                source_image_caption: content.headerMediaAsset?.caption ?? null,
                 target_locale: targetLocaleTag,
                 reading_level: level.key,
                 profile,
                 fact_bank: factData,
                 schema:
-                  "Return JSON with title, subtitle, summary, body_markdown, body_blocks, vocabulary, comprehension_questions, content_warning, editor_notes, fact_preservation_notes."
+                  "Return JSON with title, subtitle, summary, image_caption, body_markdown, body_blocks, vocabulary, comprehension_questions, content_warning, editor_notes, fact_preservation_notes. Translate image_caption when source_image_caption exists; otherwise return null."
               })
             }
           ]
@@ -442,6 +446,7 @@ export async function generateAdaptations(contentItemId: string, targetLocaleTag
           title: parsed.title,
           subtitle: parsed.subtitle,
           summary: parsed.summary,
+          imageCaption: parsed.image_caption ?? content.headerMediaAsset?.caption ?? null,
           bodyMarkdown: parsed.body_markdown,
           bodyBlocks: parsed.body_blocks as Prisma.InputJsonValue,
           vocabulary: parsed.vocabulary as Prisma.InputJsonValue,
@@ -465,6 +470,7 @@ export async function generateAdaptations(contentItemId: string, targetLocaleTag
           title: parsed.title,
           subtitle: parsed.subtitle,
           summary: parsed.summary,
+          imageCaption: parsed.image_caption ?? content.headerMediaAsset?.caption ?? null,
           bodyMarkdown: parsed.body_markdown,
           bodyBlocks: parsed.body_blocks as Prisma.InputJsonValue,
           vocabulary: parsed.vocabulary as Prisma.InputJsonValue,
@@ -487,6 +493,7 @@ export async function generateAdaptations(contentItemId: string, targetLocaleTag
           title: created.title,
           subtitle: created.subtitle,
           summary: created.summary,
+          imageCaption: created.imageCaption,
           bodyMarkdown: created.bodyMarkdown,
           bodyBlocks: created.bodyBlocks as Prisma.InputJsonValue,
           vocabulary: created.vocabulary as Prisma.InputJsonValue,

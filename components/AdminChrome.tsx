@@ -17,7 +17,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
           <Link href="/admin">
             <LayoutDashboard size={20} /> Dashboard
           </Link>
-          <Link href="/admin">
+          <Link href="/admin/content">
             <BookOpenText size={20} /> Content List
           </Link>
           <Link href="/admin/content/new">

@@ -29,6 +29,7 @@
     "react-markdown": "latest",
     "rehype-sanitize": "latest",
     "remark-gfm": "latest",
+    "sharp": "^0.34.5",
     "zod": "latest"
   },
   "devDependencies": {

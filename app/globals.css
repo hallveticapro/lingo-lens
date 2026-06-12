@@ -581,7 +581,10 @@ html.reader-leaving .reader-content {
   font-family: var(--font-ui);
   font-size: 0.95rem;
   font-weight: 800;
-  animation: toast-rise-in 220ms ease-out both;
+  pointer-events: none;
+  animation:
+    toast-rise-in 220ms ease-out both,
+    toast-fade-out 320ms ease-in 14.68s forwards;
 }
 
 @keyframes toast-rise-in {
@@ -593,6 +596,13 @@ html.reader-leaving .reader-content {
   to {
     opacity: 1;
     transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes toast-fade-out {
+  to {
+    opacity: 0;
+    transform: translate3d(0, 12px, 0);
   }
 }
 
@@ -621,6 +631,36 @@ html.reader-leaving .reader-content {
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--muted);
+}
+
+.content-list-panel {
+  margin-top: 40px;
+}
+
+.content-list-filters {
+  display: grid;
+  grid-template-columns: minmax(260px, 1.4fr) minmax(180px, 0.8fr) minmax(220px, 1fr) auto;
+  align-items: end;
+  gap: 18px;
+  padding: 28px;
+}
+
+.input-icon {
+  position: relative;
+  display: block;
+}
+
+.input-icon svg {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.input-icon .input {
+  padding-left: 42px;
 }
 
 .failure-panel {
@@ -890,6 +930,10 @@ details[open] > summary .icon-open {
   .failure-toolbar {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .content-list-filters {
+    grid-template-columns: 1fr;
   }
 
   .failure-message {

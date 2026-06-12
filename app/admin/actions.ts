@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { Prisma } from "@prisma/client";
 import { clearSession, createSession, requireAdmin, verifyAdminCredentials } from "@/lib/auth";
 import { generateAdaptations, regenerateAdaptation } from "@/lib/generation";
+import { optimizeHeaderImageForContent } from "@/lib/media";
 import { parseQuestions, parseVocabulary } from "@/lib/parsers";
 import { prisma } from "@/lib/prisma";
 import { slugify } from "@/lib/slug";
@@ -56,7 +57,13 @@ async function queueGeneration(contentItemId: string, targetLocale: string, leve
     data: { status: "generating" }
   });
 
-  void generateAdaptations(contentItemId, targetLocale, levels).catch((error) => {
+  void Promise.allSettled([
+    generateAdaptations(contentItemId, targetLocale, levels),
+    optimizeHeaderImageForContent(contentItemId)
+  ]).then((results) => {
+    const generation = results[0];
+    if (generation.status !== "rejected") return;
+    const error = generation.reason;
     console.error(
       JSON.stringify({
         level: "error",
@@ -83,6 +90,7 @@ function formPayload(formData: FormData) {
     originalPublicationDate: stringFromForm(formData, "originalPublicationDate"),
     headerImageUrl: stringFromForm(formData, "headerImageUrl"),
     imageAltText: stringFromForm(formData, "imageAltText"),
+    imageCaption: stringFromForm(formData, "imageCaption"),
     internalNotes: stringFromForm(formData, "internalNotes"),
     sourceBody: stringFromForm(formData, "sourceBody"),
     targetLocale: stringFromForm(formData, "targetLocale") || "es-419",
@@ -104,7 +112,9 @@ export async function createContentAction(formData: FormData) {
         data: {
           storageProvider: "external",
           publicUrl: payload.headerImageUrl,
+          sourceUrl: payload.headerImageUrl,
           altText: payload.imageAltText || payload.sourceTitle,
+          caption: payload.imageCaption || null,
           rightsStatus: "unreviewed"
         }
       })
@@ -156,16 +166,27 @@ export async function updateContentAction(contentId: string, formData: FormData)
   });
 
   let mediaId = current.headerMediaAssetId;
-  if (payload.headerImageUrl && payload.headerImageUrl !== current.headerMediaAsset?.publicUrl) {
+  const currentImageSource = current.headerMediaAsset?.sourceUrl ?? current.headerMediaAsset?.publicUrl;
+  if (payload.headerImageUrl && payload.headerImageUrl !== currentImageSource) {
     const media = await prisma.mediaAsset.create({
       data: {
         storageProvider: "external",
         publicUrl: payload.headerImageUrl,
+        sourceUrl: payload.headerImageUrl,
         altText: payload.imageAltText || payload.sourceTitle,
+        caption: payload.imageCaption || null,
         rightsStatus: "unreviewed"
       }
     });
     mediaId = media.id;
+  } else if (mediaId && current.headerMediaAsset) {
+    await prisma.mediaAsset.update({
+      where: { id: mediaId },
+      data: {
+        altText: payload.imageAltText || payload.sourceTitle,
+        caption: payload.imageCaption || null
+      }
+    });
   }
 
   await prisma.contentItem.update({
@@ -235,6 +256,7 @@ export async function saveAdaptationAction(adaptationId: string, formData: FormD
       title: updated.title,
       subtitle: updated.subtitle,
       summary: updated.summary,
+      imageCaption: updated.imageCaption,
       bodyMarkdown: updated.bodyMarkdown,
       bodyBlocks: updated.bodyBlocks as Prisma.InputJsonValue,
       vocabulary: updated.vocabulary as Prisma.InputJsonValue,

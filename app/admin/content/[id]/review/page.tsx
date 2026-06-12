@@ -55,7 +55,7 @@ export default async function ReviewPage({
         </div>
         <form action={publishAllAction.bind(null, content.id)} data-publish-form="true">
           <button className="btn btn-primary" type="submit">
-            Publish All Reviewed
+            <CheckCircle2 size={16} /> Publish All
           </button>
         </form>
       </div>
