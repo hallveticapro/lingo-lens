@@ -271,6 +271,14 @@ img {
   margin-top: 54px;
 }
 
+.pagination-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 18px;
+  margin-top: 48px;
+}
+
 .empty-copy {
   margin-top: 40px;
   font-size: 1.1rem;
@@ -282,13 +290,21 @@ img {
   gap: 18px;
 }
 
-.article-card img,
+.article-card-image,
 .image-placeholder {
   width: 100%;
   aspect-ratio: 1.5;
   object-fit: cover;
   border-radius: 8px;
   background: linear-gradient(135deg, var(--navy), var(--sage));
+}
+
+.reader-hero-image {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1.56;
+  object-fit: cover;
+  border-radius: 8px;
 }
 
 .image-placeholder {

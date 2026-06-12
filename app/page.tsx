@@ -2,32 +2,12 @@ import Link from "next/link";
 import { Rss } from "lucide-react";
 import { ArticleCard } from "@/components/ArticleCard";
 import { PublicShell } from "@/components/PublicChrome";
-import { prisma } from "@/lib/prisma";
+import { publishedArticleCards } from "@/lib/articles";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const readings = await prisma.adaptation.findMany({
-    where: {
-      status: "published",
-      targetLocale: { isPublic: true },
-      readingLevel: { isPublic: true }
-    },
-    include: {
-      contentItem: { include: { headerMediaAsset: true } },
-      readingLevel: true,
-      targetLocale: true
-    },
-    orderBy: { publishedAt: "desc" },
-    take: 40
-  });
-
-  const grouped = readings.reduce<typeof readings>((items, adaptation) => {
-    if (!items.some((item) => item.contentItemId === adaptation.contentItemId)) {
-      items.push(adaptation);
-    }
-    return items;
-  }, []);
+  const readings = await publishedArticleCards({ take: 4 });
 
   return (
     <PublicShell>
@@ -61,17 +41,15 @@ export default async function HomePage() {
             </Link>
           </div>
           <div className="article-grid">
-            {grouped.slice(0, 4).map((adaptation) => (
+            {readings.map((adaptation) => (
               <ArticleCard adaptation={adaptation} key={adaptation.id} />
             ))}
           </div>
-          {grouped.length > 4 ? (
-            <div className="section-action">
-              <Link className="btn btn-primary" href="/articles">
-                View more articles
-              </Link>
-            </div>
-          ) : null}
+          <div className="section-action">
+            <Link className="btn btn-primary" href="/articles">
+              View more articles
+            </Link>
+          </div>
         </div>
       </section>
     </PublicShell>

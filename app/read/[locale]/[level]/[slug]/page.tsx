@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { BookOpen, Languages, Rss } from "lucide-react";
 import { DocumentLanguage } from "@/components/DocumentLanguage";
@@ -60,7 +61,9 @@ export default async function ReadingPage({ params }: { params: Promise<Params> 
       item.readingLevel.key
     )}/${adaptation.contentItem.slug}`
   }));
-  const imageCaption = adaptation.imageCaption ?? adaptation.contentItem.headerMediaAsset?.caption;
+  const headerMedia = adaptation.contentItem.headerMediaAsset;
+  const imageCaption = adaptation.imageCaption ?? headerMedia?.caption;
+  const imageUrl = headerMedia?.publicUrl;
 
   return (
     <PublicShell>
@@ -77,12 +80,16 @@ export default async function ReadingPage({ params }: { params: Promise<Params> 
                 <span className="meta-pill">Updated {adaptation.updatedAt.toLocaleDateString()}</span>
               </div>
 
-              {adaptation.contentItem.headerMediaAsset?.publicUrl ? (
+              {imageUrl ? (
                 <>
-                  <img
-                    src={adaptation.contentItem.headerMediaAsset.publicUrl}
-                    alt={adaptation.contentItem.headerMediaAsset.altText ?? ""}
-                    style={{ borderRadius: 8, width: "100%", aspectRatio: "1.56", objectFit: "cover" }}
+                  <Image
+                    className="reader-hero-image"
+                    src={imageUrl}
+                    alt={headerMedia.altText ?? ""}
+                    width={1200}
+                    height={770}
+                    sizes="(max-width: 900px) 100vw, 720px"
+                    unoptimized={!imageUrl.startsWith("/")}
                   />
                   {imageCaption ? (
                     <p className="caption">{imageCaption}</p>

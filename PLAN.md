@@ -446,6 +446,7 @@ The audit found **no confirmed P0 issues**. Keep this phase as a release gate: i
   - Command: `pnpm exec tsc --noEmit --pretty false` or `pnpm typecheck` passes.
   - Command: `pnpm build` passes.
   - Browser smoke: `/`, `/articles`, and one `/read/...` page load with expected images and card counts.
+  - 2026-06-12: Replaced homepage/articles adaptation over-fetch + in-memory de-dupe with bounded content-item queries via `lib/articles.ts`, added `/articles` pagination, moved audited card/reader images to `next/image`, and added pagination helper tests. Focused `pnpm test -- articles homepage rss`, `pnpm lint`, `pnpm typecheck`, `pnpm build`, and `pnpm test:e2e` passed. Lint no longer reports `next/no-img-element`; build still reports the known Turbopack NFT warning.
 - **Validation command:**
   ```bash
   pnpm lint && pnpm exec tsc --noEmit --pretty false && pnpm build
