@@ -555,6 +555,21 @@ html.reader-leaving .reader-content {
   color: var(--terracotta);
 }
 
+html.reader-comfort .reader-content {
+  animation: none;
+  transition: none;
+}
+
+html.reader-comfort .reader-body {
+  font-size: 23px;
+  line-height: 1.95;
+}
+
+html.reader-comfort .reader-body p,
+html.reader-comfort .reader-body li {
+  margin-block: 1.3em;
+}
+
 .sidebar-stack {
   display: grid;
   gap: 28px;
@@ -586,6 +601,74 @@ html.reader-leaving .reader-content {
 .definition-list {
   display: grid;
   gap: 18px;
+}
+
+.reader-preferences {
+  background: var(--surface-low);
+}
+
+.reader-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 32px;
+  color: var(--navy-deep);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.reader-toggle {
+  position: relative;
+  display: inline-flex;
+  width: 50px;
+  height: 30px;
+  flex: 0 0 auto;
+}
+
+.reader-toggle input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.reader-toggle span {
+  position: absolute;
+  inset: 0;
+  border: 1px solid var(--outline);
+  border-radius: 999px;
+  background: var(--surface-lowest);
+  pointer-events: none;
+  transition: background 160ms ease, border-color 160ms ease;
+}
+
+.reader-toggle span::after {
+  content: "";
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--outline-strong);
+  transition: transform 160ms ease, background 160ms ease;
+}
+
+.reader-toggle input:checked + span {
+  border-color: var(--navy-deep);
+  background: var(--navy-deep);
+}
+
+.reader-toggle input:checked + span::after {
+  transform: translateX(20px);
+  background: white;
+}
+
+.reader-toggle input:focus-visible + span {
+  outline: 2px solid rgba(27, 38, 59, 0.22);
+  outline-offset: 3px;
 }
 
 .definition-item {

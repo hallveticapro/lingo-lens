@@ -26,6 +26,11 @@ test("public reading surfaces load from seeded data", async ({ context, page }) 
   await page.goto("/read/es-419/beginner/tradiciones-de-dia-de-muertos");
   await expect(page.getByRole("heading", { name: /Día de Muertos/i })).toBeVisible();
   await expect(page.getByRole("link", { name: "Beginner", exact: true })).toHaveAttribute("aria-current", "page");
+  await page.getByLabel("Comfort mode").check();
+  await expect(page.locator("html")).toHaveClass(/reader-comfort/);
+  await page.reload();
+  await expect(page.getByLabel("Comfort mode")).toBeChecked();
+  await expect(page.locator("html")).toHaveClass(/reader-comfort/);
   await page.getByRole("link", { name: "Intermediate", exact: true }).click();
   await expect(page).toHaveURL(/\/read\/es-419\/intermediate\/tradiciones-de-dia-de-muertos/);
   await expect(page.locator("html")).not.toHaveClass(/reader-leaving/);

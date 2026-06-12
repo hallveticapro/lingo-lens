@@ -637,6 +637,7 @@ The audit found **no confirmed P0 issues**. Keep this phase as a release gate: i
   - Command: `pnpm exec tsc --noEmit --pretty false` or `pnpm typecheck` passes.
   - Command: `pnpm build` passes.
   - Browser smoke: feature-specific screenshot or walkthrough demonstrates the acceptance behavior.
+  - 2026-06-12: Added a local reader comfort mode in the reading-tools sidebar. The preference persists in `localStorage`, toggles a `reader-comfort` document class, increases reading text size/spacing, and suppresses reader transition motion without accounts or schema changes. E2E coverage checks enabling the preference, reload persistence, and continued reduced-motion level navigation. Focused `pnpm test:e2e` passed; its build still reports the known Turbopack NFT warning.
 - **Validation command:**
   ```bash
   pnpm lint && pnpm exec tsc --noEmit --pretty false && pnpm build

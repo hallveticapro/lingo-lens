@@ -6,6 +6,7 @@ import { DocumentLanguage } from "@/components/DocumentLanguage";
 import { Markdown } from "@/components/Markdown";
 import { PublicShell } from "@/components/PublicChrome";
 import { ReadingLevelSwitcher } from "@/components/ReadingLevelSwitcher";
+import { ReaderPreferences } from "@/components/ReaderPreferences";
 import { prisma } from "@/lib/prisma";
 import { levelKeyToSlug, levelSlugToKey } from "@/lib/level";
 import type { QuestionItem, VocabularyItem } from "@/lib/parsers";
@@ -101,6 +102,7 @@ export default async function ReadingPage({ params }: { params: Promise<Params> 
         </article>
 
         <aside className="sidebar-stack" aria-label="Reading tools">
+              <ReaderPreferences />
               {vocabulary.length === 0 && questions.length === 0 ? (
                 <section className="panel-card">
                   <h2>Reading Tools</h2>
