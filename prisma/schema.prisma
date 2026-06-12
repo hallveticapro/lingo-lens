@@ -304,6 +304,17 @@ model PromptTemplate {
   @@map("prompt_templates")
 }
 
+model AdminUser {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  passwordHash String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  lastLoginAt  DateTime?
+
+  @@map("admin_users")
+}
+
 model AdaptationRevision {
   id                     String     @id @default(uuid())
   adaptationId           String

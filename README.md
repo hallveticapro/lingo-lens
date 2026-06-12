@@ -16,10 +16,9 @@ LingoLens is a Next.js App Router MVP for turning source texts into multilingual
 ```bash
 pnpm install
 cp .env.example .env
-pnpm hash-password "change-this-password"
 ```
 
-Put the complete generated value in `ADMIN_PASSWORD_HASH`, including the `scrypt:` prefix and salt, then set `AUTH_SECRET` to a long random string.
+Set `ADMIN_EMAIL`, set a temporary `ADMIN_PASSWORD`, then set `AUTH_SECRET` to a long random string. The first startup hashes `ADMIN_PASSWORD` into the database-backed admin account. After you verify login, remove `ADMIN_PASSWORD` from `.env`.
 
 For local Postgres with Docker:
 
@@ -27,12 +26,13 @@ For local Postgres with Docker:
 docker compose --env-file .env up -d db
 pnpm prisma:push
 pnpm seed
+pnpm bootstrap-admin
 pnpm dev
 ```
 
 Open `http://localhost:3000`. Admin login is at `/admin/login`.
 
-If `ADMIN_PASSWORD_HASH` is left as `replace-with-generated-hash`, the development fallback password is `admin123`. Do not deploy with that fallback.
+If you need to reset the admin password later, set `ADMIN_PASSWORD` to the new password and `BOOTSTRAP_ADMIN=true`, restart the app once, then remove `ADMIN_PASSWORD` and set `BOOTSTRAP_ADMIN=false`.
 
 ## Environment Variables To Change
 
@@ -42,7 +42,8 @@ If `ADMIN_PASSWORD_HASH` is left as `replace-with-generated-hash`, the developme
 - `HOST_PORT`: set the host port exposed by Docker or Unraid.
 - `APP_PORT`: set the internal container port for Next.js. Keep this as `3000` unless you also change the container port mapping.
 - `ADMIN_EMAIL`: set to your admin email.
-- `ADMIN_PASSWORD_HASH`: generate with `pnpm hash-password "your password"` and keep the entire output, including `scrypt:`.
+- `ADMIN_PASSWORD`: temporary bootstrap password. The app hashes this into Postgres on startup; remove it after verifying login.
+- `BOOTSTRAP_ADMIN`: set `true` to reset the admin password from `ADMIN_PASSWORD` on startup, then set it back to `false`.
 - `POSTGRES_PASSWORD`: set a strong database password.
 - `DATABASE_URL`: match your database host and password.
 - `APP_URL`: set to the public URL of your deployment.
@@ -126,7 +127,7 @@ The compose file uses:
 - host port `${HOST_PORT:-3000}` mapped to container port `${APP_PORT:-3000}`
 - `restart: unless-stopped`
 
-On container start, the app runs `prisma db push`, seeds idempotent starter data, then starts Next.js.
+On container start, the app runs `prisma db push`, seeds idempotent starter data, bootstraps the admin account when needed, then starts Next.js.
 
 If the app logs say it is serving but the Unraid host port will not connect, check that the host port maps to container port `3000`. For example, use `HOST_PORT=4716` and `APP_PORT=3000`, not `PORT=4716`.
 

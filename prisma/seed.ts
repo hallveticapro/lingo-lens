@@ -1,5 +1,4 @@
 import { PrismaClient } from "@prisma/client";
-import { scryptSync, randomBytes } from "node:crypto";
 
 const prisma = new PrismaClient();
 
@@ -45,12 +44,6 @@ const levels = [
 const sampleBody = `Families in Mexico and in Mexican communities around the world prepare colorful ofrendas for Día de Muertos. The celebration takes place on November 1 and 2. It is a time to remember loved ones who have died, not as a sad ending, but as a moment of welcome, memory, and care.
 
 Ofrendas often include photographs, candles, pan de muerto, favorite foods, and bright orange cempasúchil flowers. Many people believe the scent and color of the flowers help guide spirits home. The details vary by family and region, but the central idea is shared: memory can be active, generous, and full of life.`;
-
-function passwordHash(password: string) {
-  const salt = randomBytes(16).toString("hex");
-  const hash = scryptSync(password, salt, 64).toString("hex");
-  return `scrypt:${salt}:${hash}`;
-}
 
 async function main() {
   const english = await prisma.locale.upsert({
@@ -346,7 +339,6 @@ async function main() {
   });
 
   console.log("Seeded LingoLens data.");
-  console.log(`Example admin hash for password "admin123": ${passwordHash("admin123")}`);
 }
 
 main()

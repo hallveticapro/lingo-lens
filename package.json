@@ -14,7 +14,7 @@
     "prisma:deploy": "prisma migrate deploy",
     "prisma:push": "prisma db push",
     "seed": "tsx prisma/seed.ts",
-    "hash-password": "node scripts/hash-password.mjs"
+    "bootstrap-admin": "tsx scripts/bootstrap-admin.mjs"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

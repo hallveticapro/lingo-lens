@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { Prisma } from "@prisma/client";
-import { adminEmail, clearSession, createSession, requireAdmin, verifyPassword } from "@/lib/auth";
+import { clearSession, createSession, requireAdmin, verifyAdminCredentials } from "@/lib/auth";
 import { generateAdaptations, regenerateAdaptation } from "@/lib/generation";
 import { parseQuestions, parseVocabulary } from "@/lib/parsers";
 import { prisma } from "@/lib/prisma";
@@ -24,10 +24,7 @@ export async function loginAction(_previousState: LoginState, formData: FormData
   });
 
   if (!parsed.success) return { email, error: "Use a valid email and password." };
-  if (parsed.data.email !== adminEmail()) return { email, error: "Admin credentials were not accepted." };
-
-  const storedHash = process.env.ADMIN_PASSWORD_HASH || "";
-  if (!verifyPassword(parsed.data.password, storedHash)) {
+  if (!(await verifyAdminCredentials(parsed.data.email, parsed.data.password))) {
     return { email, error: "Admin credentials were not accepted." };
   }
 
