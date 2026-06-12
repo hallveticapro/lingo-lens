@@ -10,18 +10,25 @@ import { prisma } from "@/lib/prisma";
 import { slugify } from "@/lib/slug";
 import { adaptationEditSchema, arrayFromForm, contentFormSchema, loginSchema, stringFromForm } from "@/lib/validators";
 
-export async function loginAction(_previousState: { error?: string }, formData: FormData) {
+export type LoginState = {
+  email?: string;
+  error?: string;
+};
+
+export async function loginAction(_previousState: LoginState, formData: FormData): Promise<LoginState> {
+  const email = stringFromForm(formData, "email");
+  const password = stringFromForm(formData, "password");
   const parsed = loginSchema.safeParse({
-    email: stringFromForm(formData, "email"),
-    password: stringFromForm(formData, "password")
+    email,
+    password
   });
 
-  if (!parsed.success) return { error: "Use a valid email and password." };
-  if (parsed.data.email !== adminEmail()) return { error: "Admin credentials were not accepted." };
+  if (!parsed.success) return { email, error: "Use a valid email and password." };
+  if (parsed.data.email !== adminEmail()) return { email, error: "Admin credentials were not accepted." };
 
   const storedHash = process.env.ADMIN_PASSWORD_HASH || "";
   if (!verifyPassword(parsed.data.password, storedHash)) {
-    return { error: "Admin credentials were not accepted." };
+    return { email, error: "Admin credentials were not accepted." };
   }
 
   await createSession(parsed.data.email);

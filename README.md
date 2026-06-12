@@ -19,7 +19,7 @@ cp .env.example .env
 pnpm hash-password "change-this-password"
 ```
 
-Put the generated hash in `ADMIN_PASSWORD_HASH`, then set `AUTH_SECRET` to a long random string.
+Put the complete generated value in `ADMIN_PASSWORD_HASH`, including the `scrypt:` prefix and salt, then set `AUTH_SECRET` to a long random string.
 
 For local Postgres with Docker:
 
@@ -42,7 +42,7 @@ If `ADMIN_PASSWORD_HASH` is left as `replace-with-generated-hash`, the developme
 - `HOST_PORT`: set the host port exposed by Docker or Unraid.
 - `APP_PORT`: set the internal container port for Next.js. Keep this as `3000` unless you also change the container port mapping.
 - `ADMIN_EMAIL`: set to your admin email.
-- `ADMIN_PASSWORD_HASH`: generate with `pnpm hash-password "your password"`.
+- `ADMIN_PASSWORD_HASH`: generate with `pnpm hash-password "your password"` and keep the entire output, including `scrypt:`.
 - `POSTGRES_PASSWORD`: set a strong database password.
 - `DATABASE_URL`: match your database host and password.
 - `APP_URL`: set to the public URL of your deployment.

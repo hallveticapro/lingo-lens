@@ -666,6 +666,14 @@ img {
   padding: 36px;
 }
 
+.form-error {
+  margin: 18px 0 0;
+  color: var(--error);
+  font-family: var(--font-ui);
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
 .feed-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);

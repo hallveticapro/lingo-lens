@@ -26,6 +26,7 @@ export function verifyPassword(password: string, storedHash: string) {
 
   if (storedHash.startsWith("scrypt:")) {
     const [, salt, hash] = storedHash.split(":");
+    if (!salt || !hash) return false;
     const candidate = scryptSync(password, salt, 64).toString("hex");
     const left = Buffer.from(candidate);
     const right = Buffer.from(hash);
