@@ -29,10 +29,10 @@ services:
       - path: .env
         required: false
     environment:
-      PORT: ${PORT:-3000}
+      PORT: ${APP_PORT:-3000}
       DATABASE_URL: ${DATABASE_URL:-postgresql://lingo_lens:change-me@db:5432/lingo_lens}
       UPLOAD_DIR: ${UPLOAD_DIR:-/app/uploads}
     ports:
-      - "${PORT:-3000}:3000"
+      - "${HOST_PORT:-3000}:${APP_PORT:-3000}"
     volumes:
       - ${DATA_DIR:-./data}/uploads:/app/uploads

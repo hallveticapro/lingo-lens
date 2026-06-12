@@ -39,6 +39,8 @@ If `ADMIN_PASSWORD_HASH` is left as `replace-with-generated-hash`, the developme
 - `AUTH_SECRET`: set to a long random value.
 - `IMAGE_REPO`: set to the container image repository, such as `ghcr.io/<github-owner>/lingo-lens`.
 - `IMAGE_TAG`: set to the image tag to run, usually `latest` for the MVP.
+- `HOST_PORT`: set the host port exposed by Docker or Unraid.
+- `APP_PORT`: set the internal container port for Next.js. Keep this as `3000` unless you also change the container port mapping.
 - `ADMIN_EMAIL`: set to your admin email.
 - `ADMIN_PASSWORD_HASH`: generate with `pnpm hash-password "your password"`.
 - `POSTGRES_PASSWORD`: set a strong database password.
@@ -91,9 +93,11 @@ When `OPENAI_API_KEY` is missing or still set to `sk-replace-me`, deterministic 
 ```env
 DATA_DIR=<your-appdata-path>/lingo-lens
 UPLOAD_DIR=/app/uploads
+HOST_PORT=3000
+APP_PORT=3000
 ```
 
-`DATA_DIR` controls where Postgres and uploads live on the Unraid host. `UPLOAD_DIR` is the immutable container's internal mount path and usually should stay `/app/uploads`.
+`DATA_DIR` controls where Postgres and uploads live on the Unraid host. `UPLOAD_DIR` is the immutable container's internal mount path and usually should stay `/app/uploads`. To expose the app on a different Unraid port, change `HOST_PORT` and leave `APP_PORT=3000`.
 
 6. Make persistent folders:
 
@@ -119,10 +123,12 @@ The compose file uses:
 - `${IMAGE_REPO}:${IMAGE_TAG}` for the app image name
 - `${DATA_DIR}/postgres:/var/lib/postgresql/data`
 - `${DATA_DIR}/uploads:/app/uploads`
-- host port `${PORT:-3000}`
+- host port `${HOST_PORT:-3000}` mapped to container port `${APP_PORT:-3000}`
 - `restart: unless-stopped`
 
 On container start, the app runs `prisma db push`, seeds idempotent starter data, then starts Next.js.
+
+If the app logs say it is serving but the Unraid host port will not connect, check that the host port maps to container port `3000`. For example, use `HOST_PORT=4716` and `APP_PORT=3000`, not `PORT=4716`.
 
 ## Useful Routes
 
