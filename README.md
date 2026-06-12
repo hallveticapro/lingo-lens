@@ -140,6 +140,10 @@ If the app logs say it is serving but the Unraid host port will not connect, che
 - `/admin/login` admin login
 - `/admin` content dashboard
 
+## Reference Docs
+
+Product, roadmap, audit, guidance, and design reference materials live in `references/`. The detailed Stitch design export is kept at `references/lingo-lens-design/` and should not be served publicly.
+
 ## Notes
 
 The MVP intentionally omits learner accounts, payments, classroom tools, scraping, audio, and full rights-management UI. Rights storage and publish gating support are present for later expansion.

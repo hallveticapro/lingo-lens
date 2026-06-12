@@ -12,14 +12,14 @@ source content + target locale + reading level = adaptation
 
 ## Sources Of Truth
 
-- `PRD.md` defines product behavior, data model, and acceptance criteria.
-- `GUIDANCE.md` defines implementation checklist and final validation commands.
-- `PRODUCT.md` summarizes users, positioning, anti-references, and design principles.
-- `DESIGN.md` is the root design-system summary.
-- `lingo-lens-design/` is the detailed visual source of truth. Keep it in the repo, but do not serve it publicly.
-- `AUDIT-2026-06-12.md` records the full baseline audit.
-- `ROADMAP.md` tracks remaining roadmap work.
-- `UPDATES.md` records compact historical checkpoints.
+- `references/PRD.md` defines product behavior, data model, and acceptance criteria.
+- `references/GUIDANCE.md` defines implementation checklist and final validation commands.
+- `references/PRODUCT.md` summarizes users, positioning, anti-references, and design principles.
+- `references/DESIGN.md` is the root design-system summary.
+- `references/lingo-lens-design/` is the detailed visual source of truth. Keep it in the repo, but do not serve it publicly.
+- `references/AUDIT-2026-06-12.md` records the full baseline audit.
+- `references/ROADMAP.md` tracks remaining roadmap work.
+- `references/UPDATES.md` records compact historical checkpoints.
 
 ## Stack
 
@@ -41,7 +41,7 @@ source content + target locale + reading level = adaptation
 - `scripts/` contains operational scripts such as workers and admin bootstrap helpers.
 - `tests/` contains Playwright E2E coverage.
 - `public/` contains served static assets.
-- `lingo-lens-design/` contains reference design assets only.
+- `references/` contains product docs, audit/history docs, and reference design assets.
 
 ## Design Direction
 
@@ -55,7 +55,7 @@ LingoLens should feel like a premium editorial reading app, not a generic SaaS d
 - Inter-style UI text
 - subtle bordered cards and pill level controls
 
-Before changing UI, inspect `DESIGN.md` and the relevant Stitch reference in `lingo-lens-design/`.
+Before changing UI, inspect `references/DESIGN.md` and the relevant Stitch reference in `references/lingo-lens-design/`.
 
 ## Implementation Rules
 
@@ -133,4 +133,4 @@ docker compose build
 - Admin login has DB-backed throttling and baseline security headers are configured.
 - Remote image ingestion includes SSRF, MIME, redirect, timeout, and byte-limit protections.
 - Public query/image rendering, RSS metadata, reader comfort mode, and accessibility polish have already been improved from the baseline audit.
-- Remaining roadmap work lives in `ROADMAP.md`; do not re-implement completed audit fixes unless tests reveal a regression.
+- Remaining roadmap work lives in `references/ROADMAP.md`; do not re-implement completed audit fixes unless tests reveal a regression.

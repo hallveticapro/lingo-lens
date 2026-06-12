@@ -1,6 +1,6 @@
 # GUIDANCE.md — Codex Build Instructions for LingoLens
 
-Use this file together with `PRD.md` and the Stitch design export in `lingo-lens-design/`. The PRD is the product/data source of truth. The Stitch export is the visual source of truth. This file is the implementation checklist and operating guidance.
+Use this file together with `references/PRD.md` and the Stitch design export in `references/lingo-lens-design/`. The PRD is the product/data source of truth. The Stitch export is the visual source of truth. This file is the implementation checklist and operating guidance.
 
 ## Project Identity
 
@@ -15,18 +15,18 @@ Use this file together with `PRD.md` and the Stitch design export in `lingo-lens
 Before creating or modifying app code, inspect the Stitch export.
 
 1. Verify these exist in the project root:
-   - `PRD.md`
-   - `GUIDANCE.md`
-   - `lingo-lens-design/`
-2. If `lingo-lens-design/` is missing but `lingo-lens-design.zip` exists, unzip it to `lingo-lens-design/`.
+   - `references/PRD.md`
+   - `references/GUIDANCE.md`
+   - `references/lingo-lens-design/`
+2. If `references/lingo-lens-design/` is missing but `lingo-lens-design.zip` exists, unzip it to `references/lingo-lens-design/`.
 3. If neither the folder nor zip exists, stop and report that the required design source is missing.
-4. Read `lingo-lens-design/lingolens_design_system/DESIGN.md`.
+4. Read `references/lingo-lens-design/lingolens_design_system/DESIGN.md`.
 5. Inspect these screenshots before scaffolding UI:
-   - `lingo-lens-design/lingolens_home_2/screen.png`
-   - `lingo-lens-design/lingolens_reader_2/screen.png`
-   - `lingo-lens-design/admin_dashboard_2/screen.png`
-   - `lingo-lens-design/admin_new_content/screen.png`
-   - `lingo-lens-design/admin_review_versions/screen.png`
+   - `references/lingo-lens-design/lingolens_home_2/screen.png`
+   - `references/lingo-lens-design/lingolens_reader_2/screen.png`
+   - `references/lingo-lens-design/admin_dashboard_2/screen.png`
+   - `references/lingo-lens-design/admin_new_content/screen.png`
+   - `references/lingo-lens-design/admin_review_versions/screen.png`
 6. Build the product to match the Stitch direction as closely as practical while preserving PRD functionality.
 
 Do not build a generic SaaS dashboard and call it done. LingoLens should feel like a premium editorial reading app: calm, literary, modern, adult, trustworthy, and learner-friendly.
@@ -173,7 +173,7 @@ gh repo create lingo-lens --private --source=. --remote=origin --push
 ```
 
 5. Initialize git, commit checkpoints, and push all completed work.
-6. Keep `lingo-lens-design/` in the repo if present, but do not serve it publicly from the app.
+6. Keep `references/lingo-lens-design/` in the repo if present, but do not serve it publicly from the app.
 
 ## Required Stack
 
@@ -194,8 +194,8 @@ Use this unless a serious blocker exists:
 
 Create and maintain:
 
-- `PRD.md`
-- `GUIDANCE.md`
+- `references/PRD.md`
+- `references/GUIDANCE.md`
 - `README.md`
 - `AGENTS.md`
 - `.env.example`
