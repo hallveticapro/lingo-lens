@@ -31,7 +31,7 @@ export default async function FeedsPage() {
               )}.xml`;
               return (
                 <article className="feed-card" key={config.id}>
-                  <p className="kicker">{config.targetLocale.bcp47Tag}</p>
+                  <p className="kicker">{config.targetLocale.displayNameEn}</p>
                   <h2 className="section-title">{config.readingLevel.displayName}</h2>
                   <p className="muted">{config.description}</p>
                   <p className="input" style={{ overflowWrap: "anywhere" }}>

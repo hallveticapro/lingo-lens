@@ -172,7 +172,7 @@ export default async function AdminDashboard({ searchParams }: AdminDashboardPro
                       {item.adaptations.length} adaptations
                     </p>
                   </td>
-                  <td>{item.sourceLocale.bcp47Tag}</td>
+                  <td>{item.sourceLocale.displayNameEn}</td>
                   <td>
                     <span className="chip">{item.status.replaceAll("_", " ")}</span>
                   </td>

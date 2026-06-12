@@ -63,13 +63,16 @@ async function main() {
 
   const spanish = await prisma.locale.upsert({
     where: { bcp47Tag: "es-419" },
-    update: {},
+    update: {
+      displayNameEn: "Spanish (Latin American)",
+      nativeName: "español latinoamericano"
+    },
     create: {
       bcp47Tag: "es-419",
       languageCode: "es",
       regionCode: "419",
-      displayNameEn: "Spanish (Latin America)",
-      nativeName: "Español latinoamericano",
+      displayNameEn: "Spanish (Latin American)",
+      nativeName: "español latinoamericano",
       isEnabledAsSource: true,
       isEnabledAsTarget: true,
       isPublic: true

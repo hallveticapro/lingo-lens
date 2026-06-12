@@ -157,7 +157,7 @@ export default async function ReviewPage({
                       <Info size={16} /> Level
                     </strong>
                     <p className="muted">
-                      {selected.targetLocale.bcp47Tag} · {selected.readingLevel.displayName}
+                      {selected.targetLocale.displayNameEn} · {selected.readingLevel.displayName}
                     </p>
                   </div>
                 </div>

@@ -1,6 +1,6 @@
 # LingoLens
 
-LingoLens is a Next.js App Router MVP for turning source texts into multilingual, leveled reading experiences. The first target locale is Latin American Spanish (`es-419`), but the data model uses locale and reading-level dimensions instead of language-specific columns.
+LingoLens is a Next.js App Router MVP for turning source texts into multilingual, leveled reading experiences. The first target locale is Spanish (Latin American) (`es-419`), but the data model uses locale and reading-level dimensions instead of language-specific columns.
 
 ## Stack
 
@@ -63,7 +63,7 @@ pnpm seed
 
 The seed creates:
 
-- `en-US` and `es-419`
+- English (United States) and Spanish (Latin American)
 - four reading levels
 - four Spanish locale-level profiles
 - four Spanish RSS feed configs

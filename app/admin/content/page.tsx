@@ -177,7 +177,7 @@ export default async function ContentListPage({
                   <td>
                     {item.sourceName ?? "LingoLens"}
                     <p className="muted" style={{ margin: "4px 0 0" }}>
-                      {item.sourceLocale.bcp47Tag}
+                      {item.sourceLocale.displayNameEn}
                     </p>
                   </td>
                   <td>{dateLabel(item.publishedAt)}</td>
