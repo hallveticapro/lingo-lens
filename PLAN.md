@@ -241,6 +241,7 @@ The audit found **no confirmed P0 issues**. Keep this phase as a release gate: i
   - Command: `pnpm exec tsc --noEmit --pretty false` or `pnpm typecheck` passes.
   - Command: `pnpm build` passes.
   - File check: `rg "127\\.0\\.0\\.1|169\\.254\\.169\\.254|private|Content-Length|AbortController" lib/media.ts` shows explicit protections or equivalent helper usage.
+  - 2026-06-12: Hardened remote image downloads with DNS/IP blocking for private/local/link-local/multicast destinations, redirect revalidation and limits, `AbortController` timeouts, image MIME enforcement, declared and streamed byte caps from `MAX_UPLOAD_MB`, and redacted URL hashes in logs. Focused `pnpm test -- media validators`, `pnpm lint`, `pnpm typecheck`, and `pnpm build` passed with known raw-image/NFT warnings.
 - **Validation command:**
   ```bash
   pnpm lint && pnpm exec tsc --noEmit --pretty false && pnpm build
