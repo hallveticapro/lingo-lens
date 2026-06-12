@@ -1,18 +1,14 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { adminEmail as configuredAdminEmail, authSecret, isProduction } from "@/lib/env";
 import { prisma } from "@/lib/prisma";
 import { verifyPassword } from "@/lib/passwords";
 
 const cookieName = "ll_admin";
 
 function secret() {
-  const value = process.env.AUTH_SECRET;
-  const isPlaceholder = !value || value === "change-me" || value === "development-change-me";
-  if (process.env.NODE_ENV === "production" && isPlaceholder) {
-    throw new Error("AUTH_SECRET must be set to a non-placeholder value in production.");
-  }
-  return value || "development-change-me";
+  return authSecret();
 }
 
 function sign(value: string) {
@@ -49,7 +45,7 @@ export async function createSession(email: string) {
   store.set(cookieName, token, {
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    secure: isProduction(),
     path: "/",
     expires: new Date(expires)
   });
@@ -78,7 +74,7 @@ export async function requireAdmin() {
 }
 
 export function adminEmail() {
-  return process.env.ADMIN_EMAIL || "admin@example.com";
+  return configuredAdminEmail();
 }
 
 export async function verifyAdminCredentials(email: string, password: string) {

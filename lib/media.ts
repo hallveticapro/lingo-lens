@@ -2,12 +2,13 @@ import { createHash } from "node:crypto";
 import { mkdir, rm, stat, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import sharp from "sharp";
+import { uploadDir as configuredUploadDir } from "@/lib/env";
 import { prisma } from "@/lib/prisma";
 
 const mediaRoot = "media";
 
 function uploadDir() {
-  return process.env.UPLOAD_DIR || path.join(/*turbopackIgnore: true*/ process.cwd(), "uploads");
+  return configuredUploadDir() || path.join(/*turbopackIgnore: true*/ process.cwd(), "uploads");
 }
 
 function safeStorageKey(key: string) {

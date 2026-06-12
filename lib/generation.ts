@@ -1,6 +1,7 @@
 import OpenAI from "openai";
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
+import { isProduction, openAIApiKey, openAIModel } from "@/lib/env";
 import { prisma } from "@/lib/prisma";
 
 function stringifyFactValue(value: unknown) {
@@ -72,8 +73,7 @@ const factBankSchema = z.object({
 type FactBankPayload = z.infer<typeof factBankSchema>;
 
 function configuredApiKey() {
-  const key = process.env.OPENAI_API_KEY;
-  return key && !key.includes("replace-me") ? key : null;
+  return openAIApiKey();
 }
 
 function openaiClient() {
@@ -82,7 +82,7 @@ function openaiClient() {
 }
 
 function modelName() {
-  return process.env.OPENAI_MODEL || "gpt-5.1";
+  return openAIModel();
 }
 
 function errorDetails(error: unknown) {
@@ -115,7 +115,7 @@ function errorDetails(error: unknown) {
         : typeof maybeApiError.requestID === "string"
           ? maybeApiError.requestID
           : undefined,
-    stack: process.env.NODE_ENV === "production" ? undefined : error.stack
+    stack: isProduction() ? undefined : error.stack
   };
 
   return Object.fromEntries(Object.entries(details).filter(([, value]) => value !== undefined));

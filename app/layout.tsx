@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { appUrl } from "@/lib/env";
 import "./globals.css";
 
-const appUrl = process.env.APP_URL || "http://localhost:3000";
-
 export const metadata: Metadata = {
-  metadataBase: new URL(appUrl),
+  metadataBase: new URL(appUrl()),
   title: "LingoLens",
   description: "Real-world reading, leveled for language learners.",
   manifest: "/site.webmanifest",

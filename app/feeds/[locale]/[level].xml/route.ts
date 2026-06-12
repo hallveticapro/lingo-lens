@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { levelSlugToKey } from "@/lib/level";
+import { appUrl as configuredAppUrl, rssMaxItems } from "@/lib/env";
 import { absoluteUrl, publicReadingUrl, rssGuid, xmlEscape } from "@/lib/rss";
 
 export const dynamic = "force-dynamic";
@@ -7,7 +8,7 @@ export const dynamic = "force-dynamic";
 export async function GET(_request: Request, { params }: { params: Promise<{ locale: string; level: string }> }) {
   const { locale, level } = await params;
   const levelKey = levelSlugToKey(level.replace(/\.xml$/, ""));
-  const appUrl = process.env.APP_URL || "http://localhost:3000";
+  const appUrl = configuredAppUrl();
 
   const config = await prisma.rssFeedConfig.findFirst({
     where: {
@@ -34,7 +35,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ loc
       readingLevel: true
     },
     orderBy: { publishedAt: "desc" },
-    take: config.maxItems
+    take: Math.min(config.maxItems, rssMaxItems())
   });
 
   const xmlItems = items

@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import { openAIModel } from "../lib/env";
 
 const prisma = new PrismaClient();
 
@@ -325,7 +326,7 @@ async function main() {
     create: {
       key: "extract_fact_bank",
       version: "v1",
-      modelDefault: process.env.OPENAI_MODEL ?? "gpt-5.1",
+      modelDefault: openAIModel(),
       systemInstructions: "Extract protected facts from source content for language-learning adaptation.",
       userTemplate: "Source title: {{title}}\n\nSource body:\n{{body}}",
       outputSchema: { type: "object" }
@@ -338,7 +339,7 @@ async function main() {
     create: {
       key: "generate_adaptation",
       version: "v1",
-      modelDefault: process.env.OPENAI_MODEL ?? "gpt-5.1",
+      modelDefault: openAIModel(),
       systemInstructions:
         "Act as a language-learning editor. Use the target locale exactly, preserve protected facts, and return valid JSON.",
       userTemplate: "Create a {{level}} adaptation for {{locale}} using the source and fact bank.",

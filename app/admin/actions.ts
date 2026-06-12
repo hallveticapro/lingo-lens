@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { Prisma } from "@prisma/client";
 import { clearSession, createSession, requireAdmin, verifyAdminCredentials } from "@/lib/auth";
+import { requireRightsApproval } from "@/lib/env";
 import { generateAdaptations, regenerateAdaptation } from "@/lib/generation";
 import { optimizeHeaderImageForContent } from "@/lib/media";
 import { parseQuestions, parseVocabulary } from "@/lib/parsers";
@@ -280,7 +281,7 @@ export async function regenerateAdaptationAction(adaptationId: string) {
 }
 
 async function canPublish(contentItemId: string) {
-  if (process.env.REQUIRE_RIGHTS_APPROVAL_TO_PUBLISH !== "true") return true;
+  if (!requireRightsApproval()) return true;
   const rights = await prisma.contentRightsRecord.findUnique({ where: { contentItemId } });
   const approvedStatuses = [
     "original_owned",

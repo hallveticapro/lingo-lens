@@ -112,6 +112,7 @@ The audit found **no confirmed P0 issues**. Keep this phase as a release gate: i
   - Command: `pnpm build` passes.
   - Command: `pnpm audit --audit-level low` or `pnpm audit` passes.
   - Command: `pnpm peers check` either passes or has a documented, intentional exception in the PR.
+  - 2026-06-12: Added `typecheck` and `audit` scripts, pinned direct dependencies, centralized server env parsing in `lib/env.ts`, removed the Prisma package config warning path, and added validation steps before Docker publish. `pnpm install`, `pnpm prisma generate`, `pnpm lint`, `pnpm typecheck`, `pnpm build`, `pnpm audit`, and `pnpm peers check` passed; lint still reports the known raw-image warnings scheduled for Phase 5.
 - **Validation command:**
   ```bash
   pnpm install && pnpm prisma generate && pnpm lint && pnpm typecheck && pnpm build && pnpm audit --audit-level low && pnpm peers check
