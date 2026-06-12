@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { levelSlugToKey } from "@/lib/level";
 import { appUrl as configuredAppUrl, rssMaxItems } from "@/lib/env";
-import { absoluteUrl, publicReadingUrl, rssGuid, xmlEscape } from "@/lib/rss";
+import { absoluteUrl, publicReadingUrl, rssChannelImage, rssGuid, rssImageTags, xmlEscape } from "@/lib/rss";
 
 export const dynamic = "force-dynamic";
 
@@ -49,14 +49,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ loc
             length: item.contentItem.headerMediaAsset.fileSizeBytes
           }
         : null;
-      const mediaTags = image
-        ? `
-  <media:content url="${xmlEscape(image.url)}" medium="image" type="${xmlEscape(image.mimeType)}" />
-  <media:thumbnail url="${xmlEscape(image.url)}" />${
-    image.length ? `
-  <enclosure url="${xmlEscape(image.url)}" type="${xmlEscape(image.mimeType)}" length="${image.length}" />` : ""
-  }`
-        : "";
+      const mediaTags = rssImageTags(image);
       return `<item>
   <title>${xmlEscape(item.title)}</title>
   <link>${xmlEscape(link)}</link>
@@ -76,11 +69,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ loc
   <link>${xmlEscape(`${appUrl}/feeds`)}</link>
   <description>${xmlEscape(config.description)}</description>
   <language>${xmlEscape(config.targetLocale.bcp47Tag)}</language>
-  <image>
-    <url>${xmlEscape(absoluteUrl(appUrl, "/brand/logo-mark.png"))}</url>
-    <title>${xmlEscape(config.title)}</title>
-    <link>${xmlEscape(`${appUrl}/feeds`)}</link>
-  </image>
+  ${rssChannelImage(appUrl, config.title)}
   ${xmlItems}
 </channel>
 </rss>`;

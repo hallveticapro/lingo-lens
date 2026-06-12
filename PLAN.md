@@ -330,6 +330,7 @@ The audit found **no confirmed P0 issues**. Keep this phase as a release gate: i
   - Command: `pnpm exec tsc --noEmit --pretty false` or `pnpm typecheck` passes.
   - Command: `pnpm build` passes.
   - File check: `rg "describe\\(|it\\(|test\\(" lib app tests` shows meaningful tests for the listed regression areas.
+  - 2026-06-12: Added Vitest coverage for slug normalization, level conversion, parsers, URL/media validation, publish-all guard helper, image-rights gate helper, RSS XML/media helpers, rate limiting, and generation failure/unknown-level behavior. `pnpm test` passed with 9 files / 27 tests; `pnpm lint`, `pnpm typecheck`, and `pnpm build` passed with known raw-image/NFT warnings.
 - **Validation command:**
   ```bash
   pnpm test && pnpm lint && pnpm exec tsc --noEmit --pretty false && pnpm build

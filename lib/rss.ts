@@ -20,3 +20,27 @@ export function rssGuid(contentId: string, locale: string, levelKey: string) {
 export function absoluteUrl(appUrl: string, value: string) {
   return new URL(value, appUrl).toString();
 }
+
+export type RssImage = {
+  url: string;
+  mimeType: string;
+  length?: number | null;
+};
+
+export function rssImageTags(image: RssImage | null) {
+  if (!image) return "";
+  return `
+  <media:content url="${xmlEscape(image.url)}" medium="image" type="${xmlEscape(image.mimeType)}" />
+  <media:thumbnail url="${xmlEscape(image.url)}" />${
+    image.length ? `
+  <enclosure url="${xmlEscape(image.url)}" type="${xmlEscape(image.mimeType)}" length="${image.length}" />` : ""
+  }`;
+}
+
+export function rssChannelImage(appUrl: string, title: string) {
+  return `<image>
+    <url>${xmlEscape(absoluteUrl(appUrl, "/brand/logo-mark.png"))}</url>
+    <title>${xmlEscape(title)}</title>
+    <link>${xmlEscape(`${appUrl}/feeds`)}</link>
+  </image>`;
+}

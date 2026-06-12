@@ -8,6 +8,7 @@ import { clearSession, createSession, requireAdmin, verifyAdminCredentials } fro
 import { requireRightsApproval } from "@/lib/env";
 import { queueGenerationJob, queueRegenerationJob, retryGenerationJob } from "@/lib/generation";
 import { parseQuestions, parseVocabulary } from "@/lib/parsers";
+import { canPublishWithRights, hasPublishableAdaptations } from "@/lib/publishing";
 import { prisma } from "@/lib/prisma";
 import {
   checkAdminLoginThrottle,
@@ -277,20 +278,8 @@ export async function regenerateAdaptationAction(adaptationId: string) {
 }
 
 async function canPublish(contentItemId: string) {
-  if (!requireRightsApproval()) return true;
   const rights = await prisma.contentRightsRecord.findUnique({ where: { contentItemId } });
-  const approvedStatuses = [
-    "original_owned",
-    "licensed",
-    "public_domain_verified",
-    "creative_commons_allowed",
-    "government_work_verified"
-  ];
-  const textApproved = rights ? approvedStatuses.includes(rights.textRightsStatus) : false;
-  const imageApproved = rights
-    ? rights.imageRightsStatus === "not_applicable" || approvedStatuses.includes(rights.imageRightsStatus)
-    : false;
-  return textApproved && imageApproved;
+  return canPublishWithRights(rights, requireRightsApproval());
 }
 
 async function publishCounts(contentItemId: string) {
@@ -334,7 +323,7 @@ export async function publishAllAction(contentItemId: string) {
   const publishableCount = await prisma.adaptation.count({
     where: { contentItemId, status: { in: ["needs_review", "generated", "published"] } }
   });
-  if (publishableCount === 0) {
+  if (!hasPublishableAdaptations(publishableCount)) {
     throw new Error("Generate at least one adaptation before publishing this content item.");
   }
   await prisma.adaptation.updateMany({
