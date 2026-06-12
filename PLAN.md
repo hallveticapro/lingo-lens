@@ -572,6 +572,7 @@ The audit found **no confirmed P0 issues**. Keep this phase as a release gate: i
   - Command: `pnpm build` passes.
   - File check: new focused modules exist and imports from app routes still resolve.
   - Git diff check: route paths and form action exports are unchanged unless intentionally documented.
+  - 2026-06-12: Split admin server actions into focused auth/content/generation/publishing modules while preserving the `@/app/admin/actions` import surface, and extracted generation schemas/error payload normalization into `lib/generation/payloads.ts` while keeping generation runner/job side effects in `lib/generation.ts`. Focused `pnpm test -- generation publishing rate-limit`, `pnpm typecheck && pnpm build`, and `pnpm test:e2e` passed; build still reports the known Turbopack NFT warning.
 - **Validation command:**
   ```bash
   pnpm test && pnpm lint && pnpm exec tsc --noEmit --pretty false && pnpm build
