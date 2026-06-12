@@ -21,9 +21,24 @@ function verifySigned(value: string, signature: string) {
   return left.length === right.length && timingSafeEqual(left, right);
 }
 
+function encodePayload(payload: { email: string; expires: number }) {
+  return Buffer.from(JSON.stringify(payload), "utf8").toString("base64url");
+}
+
+function decodePayload(value: string) {
+  try {
+    const decoded = Buffer.from(value, "base64url").toString("utf8");
+    const payload = JSON.parse(decoded) as { email?: unknown; expires?: unknown };
+    if (typeof payload.email !== "string" || typeof payload.expires !== "number") return null;
+    return { email: payload.email, expires: payload.expires };
+  } catch {
+    return null;
+  }
+}
+
 export async function createSession(email: string) {
   const expires = Date.now() + 1000 * 60 * 60 * 12;
-  const payload = `${email}:${expires}`;
+  const payload = encodePayload({ email, expires });
   const token = `${payload}.${sign(payload)}`;
   const store = await cookies();
   store.set(cookieName, token, {
@@ -46,9 +61,9 @@ export async function getAdminSession() {
   if (!token) return null;
   const [payload, signature] = token.split(".");
   if (!payload || !signature || !verifySigned(payload, signature)) return null;
-  const [email, expires] = payload.split(":");
-  if (!email || Number(expires) < Date.now()) return null;
-  return { email };
+  const session = decodePayload(payload);
+  if (!session || session.expires < Date.now()) return null;
+  return { email: session.email };
 }
 
 export async function requireAdmin() {
