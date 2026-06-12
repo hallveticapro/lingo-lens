@@ -12,7 +12,7 @@ export default async function EditContentPage({ params }: { params: Promise<{ id
   const [content, locales, targetLocales, levels] = await Promise.all([
     prisma.contentItem.findUniqueOrThrow({
       where: { id },
-      include: { headerMediaAsset: true }
+      include: { headerMediaAsset: true, sourceLocale: true }
     }),
     prisma.locale.findMany({ where: { isEnabledAsSource: true }, orderBy: { displayNameEn: "asc" } }),
     prisma.locale.findMany({ where: { isEnabledAsTarget: true }, orderBy: { displayNameEn: "asc" } }),

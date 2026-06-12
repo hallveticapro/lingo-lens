@@ -1,7 +1,7 @@
 import type { ContentItem, Locale, MediaAsset, ReadingLevel } from "@prisma/client";
 import { GenerationSubmitToast } from "@/components/GenerationSubmitToast";
 
-type ContentWithMedia = ContentItem & { headerMediaAsset: MediaAsset | null };
+type ContentWithMedia = ContentItem & { headerMediaAsset: MediaAsset | null; sourceLocale?: Locale };
 
 type ContentFormProps = {
   action: (formData: FormData) => void | Promise<void>;
@@ -33,7 +33,7 @@ export function ContentForm({ action, locales, targetLocales, levels, content }:
         </div>
         <div className="field">
           <label htmlFor="sourceLocale">Source Language</label>
-          <select className="select" id="sourceLocale" name="sourceLocale" defaultValue={content?.sourceLocaleId ? undefined : "en-US"}>
+          <select className="select" id="sourceLocale" name="sourceLocale" defaultValue={content?.sourceLocale?.bcp47Tag ?? "en-US"}>
             {locales.map((locale) => (
               <option value={locale.bcp47Tag} key={locale.id}>
                 {locale.displayNameEn}

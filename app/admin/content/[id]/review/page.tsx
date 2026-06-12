@@ -53,11 +53,13 @@ export default async function ReviewPage({
             Review: {content.sourceTitle}
           </h1>
         </div>
-        <form action={publishAllAction.bind(null, content.id)} data-publish-form="true">
-          <button className="btn btn-primary" type="submit">
-            <CheckCircle2 size={16} /> Publish All
-          </button>
-        </form>
+        {content.adaptations.length > 0 ? (
+          <form action={publishAllAction.bind(null, content.id)} data-publish-form="true">
+            <button className="btn btn-primary" type="submit">
+              <CheckCircle2 size={16} /> Publish All
+            </button>
+          </form>
+        ) : null}
       </div>
 
       {content.adaptations.length === 0 ? (
@@ -86,7 +88,7 @@ export default async function ReviewPage({
             <form className="form-card" action={saveAdaptationAction.bind(null, selected.id)}>
               <div className="field">
                 <label htmlFor="title">Article Title</label>
-                <input className="input" id="title" name="title" defaultValue={selected.title} />
+                <input className="input" id="title" name="title" defaultValue={selected.title} required />
               </div>
               <div className="field" style={{ marginTop: 18 }}>
                 <label htmlFor="summary">Summary / Meta Description</label>
@@ -99,6 +101,7 @@ export default async function ReviewPage({
                   id="bodyMarkdown"
                   name="bodyMarkdown"
                   defaultValue={selected.bodyMarkdown}
+                  required
                 />
               </div>
               <div className="field" style={{ marginTop: 34, borderTop: "1px solid var(--surface-highest)", paddingTop: 30 }}>

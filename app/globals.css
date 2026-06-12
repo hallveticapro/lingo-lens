@@ -19,7 +19,9 @@
   --sage: #81b29a;
   --sage-soft: #bbeed4;
   --error: #ba1a1a;
+  --paper: var(--surface-lowest);
   --shadow: 0 4px 20px rgba(27, 38, 59, 0.05);
+  --shadow-soft: var(--shadow);
   --font-display: "Playfair Display", Georgia, serif;
   --font-reader: "Source Serif 4", Georgia, serif;
   --font-ui: "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;

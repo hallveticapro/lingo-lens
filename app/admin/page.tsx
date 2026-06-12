@@ -139,12 +139,12 @@ export default async function AdminDashboard({ searchParams }: AdminDashboardPro
       <section className="admin-card" style={{ padding: 0 }}>
         <div className="latest-heading" style={{ padding: 28 }}>
           <h2 className="section-title">Recent Content</h2>
-          <div className="button-row" style={{ justifyContent: "flex-end" }}>
-            <input className="input" placeholder="Search titles..." aria-label="Search titles" />
-            <button className="btn btn-secondary" type="button">
+          <form className="button-row" action="/admin/content" style={{ justifyContent: "flex-end" }}>
+            <input className="input" name="q" placeholder="Search titles..." aria-label="Search titles" />
+            <button className="btn btn-secondary" type="submit">
               Filter
             </button>
-          </div>
+          </form>
         </div>
         <table className="content-table">
           <thead>

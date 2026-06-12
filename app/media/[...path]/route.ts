@@ -5,6 +5,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET(_request: Request, { params }: { params: Promise<{ path: string[] }> }) {
   const { path } = await params;
+  if (path[0] !== "media") notFound();
   const storageKey = path.join("/");
 
   try {

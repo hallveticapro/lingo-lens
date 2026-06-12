@@ -282,13 +282,18 @@ export async function regenerateAdaptationAction(adaptationId: string) {
 async function canPublish(contentItemId: string) {
   if (process.env.REQUIRE_RIGHTS_APPROVAL_TO_PUBLISH !== "true") return true;
   const rights = await prisma.contentRightsRecord.findUnique({ where: { contentItemId } });
-  return (
-    rights?.textRightsStatus === "original_owned" ||
-    rights?.textRightsStatus === "licensed" ||
-    rights?.textRightsStatus === "public_domain_verified" ||
-    rights?.textRightsStatus === "creative_commons_allowed" ||
-    rights?.textRightsStatus === "government_work_verified"
-  );
+  const approvedStatuses = [
+    "original_owned",
+    "licensed",
+    "public_domain_verified",
+    "creative_commons_allowed",
+    "government_work_verified"
+  ];
+  const textApproved = rights ? approvedStatuses.includes(rights.textRightsStatus) : false;
+  const imageApproved = rights
+    ? rights.imageRightsStatus === "not_applicable" || approvedStatuses.includes(rights.imageRightsStatus)
+    : false;
+  return textApproved && imageApproved;
 }
 
 async function publishCounts(contentItemId: string) {
@@ -328,6 +333,12 @@ export async function publishAllAction(contentItemId: string) {
   const session = await requireAdmin();
   if (!(await canPublish(contentItemId))) {
     throw new Error("Rights approval is required before publishing this content item.");
+  }
+  const publishableCount = await prisma.adaptation.count({
+    where: { contentItemId, status: { in: ["needs_review", "generated", "published"] } }
+  });
+  if (publishableCount === 0) {
+    throw new Error("Generate at least one adaptation before publishing this content item.");
   }
   await prisma.adaptation.updateMany({
     where: { contentItemId, status: { in: ["needs_review", "generated", "published"] } },

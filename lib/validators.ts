@@ -1,15 +1,26 @@
 import { z } from "zod";
 
+const webUrlSchema = z
+  .string()
+  .trim()
+  .url("Use a valid URL.")
+  .refine((value) => {
+    const protocol = new URL(value).protocol;
+    return protocol === "http:" || protocol === "https:";
+  }, "Use an http or https URL.");
+
+const optionalWebUrlSchema = webUrlSchema.optional().or(z.literal(""));
+
 export const contentFormSchema = z.object({
   sourceTitle: z.string().trim().min(3, "Add a source title."),
   sourceSubtitle: z.string().trim().optional(),
   sourceLocale: z.string().trim().min(2).default("en-US"),
   contentType: z.enum(["news_article", "public_domain_story", "original_story", "lesson_text", "other"]),
   sourceName: z.string().trim().optional(),
-  sourceUrl: z.string().trim().url("Use a valid URL.").optional().or(z.literal("")),
+  sourceUrl: optionalWebUrlSchema,
   originalAuthor: z.string().trim().optional(),
   originalPublicationDate: z.string().trim().optional(),
-  headerImageUrl: z.string().trim().url("Use a valid image URL.").optional().or(z.literal("")),
+  headerImageUrl: optionalWebUrlSchema,
   imageAltText: z.string().trim().optional(),
   imageCaption: z.string().trim().optional(),
   internalNotes: z.string().trim().optional(),

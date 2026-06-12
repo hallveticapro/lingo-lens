@@ -16,3 +16,7 @@ export function publicReadingUrl(appUrl: string, locale: string, levelKey: strin
 export function rssGuid(contentId: string, locale: string, levelKey: string) {
   return `content:${contentId}:locale:${locale}:level:${levelKey}`;
 }
+
+export function absoluteUrl(appUrl: string, value: string) {
+  return new URL(value, appUrl).toString();
+}

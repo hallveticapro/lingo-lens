@@ -7,7 +7,12 @@ import { verifyPassword } from "@/lib/passwords";
 const cookieName = "ll_admin";
 
 function secret() {
-  return process.env.AUTH_SECRET || "development-change-me";
+  const value = process.env.AUTH_SECRET;
+  const isPlaceholder = !value || value === "change-me" || value === "development-change-me";
+  if (process.env.NODE_ENV === "production" && isPlaceholder) {
+    throw new Error("AUTH_SECRET must be set to a non-placeholder value in production.");
+  }
+  return value || "development-change-me";
 }
 
 function sign(value: string) {
