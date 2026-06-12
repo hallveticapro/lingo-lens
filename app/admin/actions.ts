@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { Prisma } from "@prisma/client";
 import { clearSession, createSession, requireAdmin, verifyAdminCredentials } from "@/lib/auth";
@@ -8,6 +9,12 @@ import { requireRightsApproval } from "@/lib/env";
 import { queueGenerationJob, queueRegenerationJob, retryGenerationJob } from "@/lib/generation";
 import { parseQuestions, parseVocabulary } from "@/lib/parsers";
 import { prisma } from "@/lib/prisma";
+import {
+  checkAdminLoginThrottle,
+  clientIpFromHeaders,
+  recordAdminLoginFailure,
+  recordAdminLoginSuccess
+} from "@/lib/rate-limit";
 import { slugify } from "@/lib/slug";
 import { adaptationEditSchema, arrayFromForm, contentFormSchema, loginSchema, stringFromForm } from "@/lib/validators";
 
@@ -25,10 +32,21 @@ export async function loginAction(_previousState: LoginState, formData: FormData
   });
 
   if (!parsed.success) return { email, error: "Use a valid email and password." };
+  const clientIp = clientIpFromHeaders(await headers());
+  const throttle = await checkAdminLoginThrottle(parsed.data.email, clientIp);
+  if (!throttle.allowed) {
+    return {
+      email,
+      error: `Too many login attempts. Try again after ${throttle.retryAt?.toLocaleTimeString() ?? "a short wait"}.`
+    };
+  }
+
   if (!(await verifyAdminCredentials(parsed.data.email, parsed.data.password))) {
+    await recordAdminLoginFailure(parsed.data.email, clientIp);
     return { email, error: "Admin credentials were not accepted." };
   }
 
+  await recordAdminLoginSuccess(parsed.data.email, clientIp);
   await createSession(parsed.data.email);
   redirect("/admin");
 }

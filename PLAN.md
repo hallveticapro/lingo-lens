@@ -280,6 +280,7 @@ The audit found **no confirmed P0 issues**. Keep this phase as a release gate: i
   - Command: `pnpm build` passes.
   - Browser/curl smoke after local run: `curl -I http://localhost:3000/admin/login` shows expected headers.
   - Browser smoke: repeated failed login attempts eventually show a throttled message without crashing the page.
+  - 2026-06-12: Added DB-backed admin login throttling keyed by email and hashed IP, wired failed/success login accounting, added pure rate-limit tests, and configured baseline `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, and report-only CSP headers. Focused `pnpm test -- auth rate-limit`, `pnpm prisma generate`, `pnpm lint`, `pnpm typecheck`, and `pnpm build` passed. Local `PORT=3001 pnpm start` plus `curl -I http://localhost:3001/admin/login` showed the expected headers.
 - **Validation command:**
   ```bash
   pnpm lint && pnpm exec tsc --noEmit --pretty false && pnpm build

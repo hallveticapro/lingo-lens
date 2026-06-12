@@ -319,6 +319,22 @@ model AdminUser {
   @@map("admin_users")
 }
 
+model AdminLoginThrottle {
+  id              String    @id @default(uuid())
+  email           String
+  ipHash          String
+  failedCount     Int       @default(0)
+  windowStartedAt DateTime  @default(now())
+  lastAttemptAt   DateTime  @default(now())
+  lockedUntil     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([email, ipHash])
+  @@index([lockedUntil])
+  @@map("admin_login_throttles")
+}
+
 model AdaptationRevision {
   id                     String     @id @default(uuid())
   adaptationId           String
