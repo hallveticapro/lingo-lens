@@ -60,6 +60,7 @@ button {
 img {
   display: block;
   max-width: 100%;
+  height: auto;
 }
 
 .site-shell {
@@ -355,6 +356,11 @@ img {
   padding: 54px 0 90px;
 }
 
+.reader-layout > article,
+.reader-layout > aside {
+  min-width: 0;
+}
+
 .reader-content {
   animation: reader-fade-in 220ms ease-out both;
   transition: opacity 150ms ease, transform 150ms ease;
@@ -390,6 +396,7 @@ html.reader-leaving .reader-content {
   line-height: 0.98;
   text-align: center;
   margin: 26px 0 22px;
+  overflow-wrap: anywhere;
 }
 
 .dek {
@@ -462,6 +469,53 @@ html.reader-leaving .reader-content {
   font-size: 21px;
   line-height: 1.75;
   color: var(--ink);
+  min-width: 0;
+  overflow-wrap: break-word;
+  hyphens: auto;
+}
+
+.reader-body > * {
+  max-width: 100%;
+}
+
+.reader-body a {
+  overflow-wrap: anywhere;
+}
+
+.reader-body img,
+.reader-body video,
+.reader-body canvas,
+.reader-body svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.reader-body iframe {
+  display: block;
+  max-width: 100%;
+}
+
+.reader-body figure {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.reader-body table {
+  display: block;
+  width: max-content;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+}
+
+.reader-body pre {
+  max-width: 100%;
+  overflow-x: auto;
+  white-space: pre-wrap;
+}
+
+.reader-body code {
+  overflow-wrap: anywhere;
 }
 
 .reader-body h1,
