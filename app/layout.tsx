@@ -1,7 +1,29 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { Inter, Playfair_Display, Source_Serif_4 } from "next/font/google";
 import { appUrl } from "@/lib/env";
 import "./globals.css";
+
+const inter = Inter({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+  variable: "--font-inter",
+  display: "swap"
+});
+
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  weight: ["600", "700"],
+  variable: "--font-playfair",
+  display: "swap"
+});
+
+const sourceSerif = Source_Serif_4({
+  subsets: ["latin"],
+  weight: ["400", "600", "700"],
+  variable: "--font-source-serif",
+  display: "swap"
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL(appUrl()),
@@ -40,7 +62,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body className={`${inter.variable} ${playfair.variable} ${sourceSerif.variable}`}>{children}</body>
     </html>
   );
 }

@@ -604,6 +604,7 @@ The audit found **no confirmed P0 issues**. Keep this phase as a release gate: i
   - Command: `pnpm build` passes.
   - Browser smoke: key public/admin pages still render correctly after cleanup.
   - Network check if font work is included: browser devtools shows no direct Google Fonts request from page load.
+  - 2026-06-12: Removed unused `levelSlugs`, `ReadingLevelKey`, `labelInitials`, `.btn-tertiary`, `.badge`, `.breadcrumb`, and unreferenced `public/brand/logo-mark.png`/`og-image.png`; kept `.steps`/`.step-card` and `.chip-active` because Phase 6 uses them. Replaced CSS Google Fonts `@import` with `next/font/google`, updated CSS variables, and tightened report-only CSP to self-hosted font/style sources. Reference checks found no remaining direct Google Fonts URLs, and `.next/static/media` contains the generated local `.woff2` font assets. Focused `pnpm test -- level` and `pnpm typecheck && pnpm build` passed; build still reports the known Turbopack NFT warning.
 - **Validation command:**
   ```bash
   rg "levelSlugs|ReadingLevelKey|labelInitials|btn-tertiary|step-card|chip-active|breadcrumb" .
