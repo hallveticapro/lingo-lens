@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { AlertCircle, CheckCircle2, FilePlus2, Pencil, RotateCw } from "lucide-react";
+import { AlertCircle, CheckCircle2, ChevronDown, CirclePlus, FilePlus2, Pencil, RotateCw } from "lucide-react";
 import { archiveContentAction, clearGenerationErrorsAction } from "@/app/admin/actions";
 import { AdminShell } from "@/components/AdminChrome";
 import { prisma } from "@/lib/prisma";
@@ -157,6 +157,10 @@ export default async function AdminDashboard() {
       {recentFailedJobs.length > 0 ? (
         <details className="admin-card failure-panel">
           <summary className="failure-panel-summary">
+            <span className="disclosure-icon" aria-hidden="true">
+              <CirclePlus className="icon-collapsed" size={18} />
+              <ChevronDown className="icon-open" size={18} />
+            </span>
             <span>
               <span className="section-title">Recent Generation Failures</span>
               <span className="muted"> {failedJobCount} errors</span>
@@ -176,6 +180,10 @@ export default async function AdminDashboard() {
             {recentFailedJobs.map((job) => (
               <details className="failure-item" key={job.id}>
                 <summary className="failure-item-summary">
+                  <span className="disclosure-icon" aria-hidden="true">
+                    <CirclePlus className="icon-collapsed" size={16} />
+                    <ChevronDown className="icon-open" size={16} />
+                  </span>
                   <span>
                     <span className="kicker" style={{ color: "var(--error)" }}>
                       {formatJobType(job.jobType)}

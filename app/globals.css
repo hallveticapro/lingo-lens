@@ -559,13 +559,39 @@ img {
 .failure-panel-summary,
 .failure-item-summary {
   cursor: pointer;
+  list-style: none;
+}
+
+.failure-panel-summary::-webkit-details-marker,
+.failure-item-summary::-webkit-details-marker {
+  display: none;
 }
 
 .failure-panel-summary {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto 1fr;
   align-items: center;
-  justify-content: space-between;
-  gap: 18px;
+  gap: 14px;
+}
+
+.disclosure-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--surface-highest);
+  border-radius: 999px;
+  color: var(--navy-deep);
+  background: var(--paper);
+}
+
+.icon-open,
+details[open] > summary .icon-collapsed {
+  display: none;
+}
+
+details[open] > summary .icon-open {
+  display: block;
 }
 
 .failure-toolbar {
@@ -594,7 +620,7 @@ img {
 
 .failure-item-summary {
   display: grid;
-  grid-template-columns: minmax(220px, 1fr) minmax(260px, 2fr);
+  grid-template-columns: auto minmax(220px, 1fr) minmax(260px, 2fr);
   align-items: center;
   gap: 18px;
 }
@@ -613,6 +639,11 @@ img {
   font-family: var(--font-ui);
   font-size: 0.92rem;
   line-height: 1.45;
+  display: -webkit-box;
+  max-height: 4.35em;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
 }
 
 .failure-detail {
@@ -782,12 +813,16 @@ img {
   }
 
   .failure-item-summary {
-    grid-template-columns: 1fr;
+    grid-template-columns: auto 1fr;
   }
 
   .failure-toolbar {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .failure-message {
+    grid-column: 1 / -1;
   }
 }
 
