@@ -1,4 +1,5 @@
 import type { ContentItem, Locale, MediaAsset, ReadingLevel } from "@prisma/client";
+import { GenerationSubmitToast } from "@/components/GenerationSubmitToast";
 
 type ContentWithMedia = ContentItem & { headerMediaAsset: MediaAsset | null };
 
@@ -12,7 +13,8 @@ type ContentFormProps = {
 
 export function ContentForm({ action, locales, targetLocales, levels, content }: ContentFormProps) {
   return (
-    <form className="form-card" action={action}>
+    <form className="form-card" action={action} data-generation-form="true">
+      <GenerationSubmitToast />
       <div className="form-grid">
         <div className="field full">
           <label htmlFor="sourceTitle">Source Title</label>
