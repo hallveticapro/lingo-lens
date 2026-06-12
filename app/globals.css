@@ -395,9 +395,22 @@ html.reader-leaving .reader-content {
   justify-content: center;
   gap: 12px;
   flex-wrap: wrap;
-  color: var(--muted);
-  font-size: 12px;
   margin-bottom: 36px;
+}
+
+.meta-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 13px;
+  border: 1px solid var(--surface-highest);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.58);
+  color: var(--muted);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1;
 }
 
 .caption {

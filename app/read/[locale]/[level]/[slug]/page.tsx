@@ -78,10 +78,10 @@ export default async function ReadingPage({ params }: { params: Promise<Params> 
               <h1 className="article-title">{adaptation.title}</h1>
               {adaptation.summary ? <p className="dek">{adaptation.summary}</p> : null}
               <div className="meta-line">
-                <span>
+                <span className="meta-pill">
                   <BookOpen size={14} /> Source: {adaptation.contentItem.sourceName ?? "LingoLens"}
                 </span>
-                <span>Updated {adaptation.updatedAt.toLocaleDateString()}</span>
+                <span className="meta-pill">Updated {adaptation.updatedAt.toLocaleDateString()}</span>
               </div>
 
               {adaptation.contentItem.headerMediaAsset?.publicUrl ? (
