@@ -3,21 +3,6 @@ import { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 
-const generatedSchema = z.object({
-  title: z.string(),
-  subtitle: z.string().nullable().optional(),
-  summary: z.string().nullable().optional(),
-  body_markdown: z.string(),
-  body_blocks: z.array(z.record(z.string(), z.unknown())).default([]),
-  vocabulary: z.array(z.record(z.string(), z.unknown())).default([]),
-  comprehension_questions: z.array(z.record(z.string(), z.unknown())).default([]),
-  content_warning: z.string().nullable().optional(),
-  editor_notes: z.array(z.string()).default([]),
-  fact_preservation_notes: z.array(z.string()).default([])
-});
-
-type GeneratedPayload = z.infer<typeof generatedSchema>;
-
 function stringifyFactValue(value: unknown) {
   if (typeof value === "string") return value;
   if (typeof value === "number" || typeof value === "boolean") return String(value);
@@ -33,13 +18,45 @@ function stringifyFactValue(value: unknown) {
   return "";
 }
 
+function arrayInput(value: unknown) {
+  if (value === undefined || value === null) return [];
+  return Array.isArray(value) ? value : [value];
+}
+
 const flexibleStringArray = z.preprocess(
-  (value) => {
-    if (value === undefined || value === null) return [];
-    return Array.isArray(value) ? value : [value];
-  },
+  arrayInput,
   z.array(z.unknown()).transform((values) => values.map(stringifyFactValue).map((value) => value.trim()).filter(Boolean))
 );
+
+function flexibleRecordArray(stringRecord: (text: string) => Record<string, unknown>) {
+  return z.preprocess(
+    arrayInput,
+    z.array(z.unknown()).transform((values) =>
+      values
+        .map((value) => {
+          if (value && typeof value === "object" && !Array.isArray(value)) return value as Record<string, unknown>;
+          const text = stringifyFactValue(value).trim();
+          return text ? stringRecord(text) : null;
+        })
+        .filter((value): value is Record<string, unknown> => Boolean(value))
+    )
+  );
+}
+
+const generatedSchema = z.object({
+  title: z.string(),
+  subtitle: z.string().nullable().optional(),
+  summary: z.string().nullable().optional(),
+  body_markdown: z.string(),
+  body_blocks: flexibleRecordArray((text) => ({ type: "paragraph", text })),
+  vocabulary: flexibleRecordArray((text) => ({ term: text })),
+  comprehension_questions: flexibleRecordArray((text) => ({ question: text, answer: "" })),
+  content_warning: z.string().nullable().optional(),
+  editor_notes: flexibleStringArray,
+  fact_preservation_notes: flexibleStringArray
+});
+
+type GeneratedPayload = z.infer<typeof generatedSchema>;
 
 const factBankSchema = z.object({
   facts: flexibleStringArray,
