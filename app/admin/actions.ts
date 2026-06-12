@@ -37,6 +37,19 @@ export async function logoutAction() {
   redirect("/");
 }
 
+export async function clearGenerationErrorsAction() {
+  await requireAdmin();
+  await prisma.generationJob.updateMany({
+    where: { status: "failed" },
+    data: {
+      status: "canceled",
+      errorMessage: null,
+      responsePayload: Prisma.JsonNull
+    }
+  });
+  revalidatePath("/admin");
+}
+
 function formPayload(formData: FormData) {
   return {
     sourceTitle: stringFromForm(formData, "sourceTitle"),

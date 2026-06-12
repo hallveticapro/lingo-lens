@@ -556,6 +556,30 @@ img {
   margin-top: 28px;
 }
 
+.failure-panel-summary,
+.failure-item-summary {
+  cursor: pointer;
+}
+
+.failure-panel-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.failure-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.failure-toolbar p {
+  margin: 0;
+}
+
 .failure-list {
   display: grid;
   gap: 14px;
@@ -563,19 +587,24 @@ img {
 }
 
 .failure-item {
-  display: grid;
-  grid-template-columns: minmax(180px, 1fr) minmax(260px, 2fr) auto;
-  align-items: center;
-  gap: 18px;
   padding: 18px;
   border: 1px solid var(--surface-highest);
   background: #fffaf8;
 }
 
-.failure-item h3 {
+.failure-item-summary {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(260px, 2fr);
+  align-items: center;
+  gap: 18px;
+}
+
+.failure-title {
+  display: block;
   margin: 4px 0;
   font-family: var(--font-ui);
   font-size: 1rem;
+  font-weight: 800;
 }
 
 .failure-message {
@@ -584,6 +613,17 @@ img {
   font-family: var(--font-ui);
   font-size: 0.92rem;
   line-height: 1.45;
+}
+
+.failure-detail {
+  overflow-x: auto;
+  margin: 18px 0;
+  padding: 16px;
+  border: 1px solid var(--surface-highest);
+  background: var(--paper);
+  color: var(--ink);
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .form-card {
@@ -741,8 +781,13 @@ img {
     position: static;
   }
 
-  .failure-item {
+  .failure-item-summary {
     grid-template-columns: 1fr;
+  }
+
+  .failure-toolbar {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }
 

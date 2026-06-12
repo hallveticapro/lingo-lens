@@ -18,14 +18,37 @@ const generatedSchema = z.object({
 
 type GeneratedPayload = z.infer<typeof generatedSchema>;
 
+function stringifyFactValue(value: unknown) {
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  if (value && typeof value === "object") {
+    const record = value as Record<string, unknown>;
+    const preferred = ["text", "quote", "value", "number", "name", "label", "description", "summary"]
+      .map((key) => record[key])
+      .find((entry) => typeof entry === "string" || typeof entry === "number" || typeof entry === "boolean");
+
+    if (preferred !== undefined) return String(preferred);
+    return JSON.stringify(value);
+  }
+  return "";
+}
+
+const flexibleStringArray = z.preprocess(
+  (value) => {
+    if (value === undefined || value === null) return [];
+    return Array.isArray(value) ? value : [value];
+  },
+  z.array(z.unknown()).transform((values) => values.map(stringifyFactValue).map((value) => value.trim()).filter(Boolean))
+);
+
 const factBankSchema = z.object({
-  facts: z.array(z.string()).default([]),
-  entities: z.array(z.string()).default([]),
-  dates: z.array(z.string()).default([]),
-  numbers: z.array(z.string()).default([]),
-  quotes: z.array(z.string()).default([]),
-  sensitive_topics: z.array(z.string()).default([]),
-  preservation_notes: z.array(z.string()).default([])
+  facts: flexibleStringArray,
+  entities: flexibleStringArray,
+  dates: flexibleStringArray,
+  numbers: flexibleStringArray,
+  quotes: flexibleStringArray,
+  sensitive_topics: flexibleStringArray,
+  preservation_notes: flexibleStringArray
 });
 
 type FactBankPayload = z.infer<typeof factBankSchema>;

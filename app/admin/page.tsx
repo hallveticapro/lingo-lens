@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { AlertCircle, CheckCircle2, FilePlus2, Pencil, RotateCw } from "lucide-react";
-import { archiveContentAction } from "@/app/admin/actions";
+import { archiveContentAction, clearGenerationErrorsAction } from "@/app/admin/actions";
 import { AdminShell } from "@/components/AdminChrome";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
@@ -11,9 +11,9 @@ function formatJobType(jobType: string) {
   return jobType.replaceAll("_", " ");
 }
 
-function formatErrorMessage(message: string | null) {
-  if (!message) return "No error details were captured.";
-  return message.length > 260 ? `${message.slice(0, 257)}...` : message;
+function formatJson(value: unknown) {
+  if (value === null || value === undefined) return "No structured details were captured.";
+  return JSON.stringify(value, null, 2);
 }
 
 export default async function AdminDashboard() {
@@ -155,33 +155,46 @@ export default async function AdminDashboard() {
       </section>
 
       {recentFailedJobs.length > 0 ? (
-        <section className="admin-card failure-panel">
-          <div className="latest-heading">
-            <h2 className="section-title">Recent Generation Failures</h2>
-            <p className="muted" style={{ margin: 0 }}>
+        <details className="admin-card failure-panel">
+          <summary className="failure-panel-summary">
+            <span>
+              <span className="section-title">Recent Generation Failures</span>
+              <span className="muted"> {failedJobCount} errors</span>
+            </span>
+          </summary>
+          <div className="failure-toolbar">
+            <p className="muted">
               These messages also appear in Docker logs with <code>scope=generation</code>.
             </p>
+            <form action={clearGenerationErrorsAction}>
+              <button className="btn btn-secondary" type="submit">
+                Clear Errors
+              </button>
+            </form>
           </div>
           <div className="failure-list">
             {recentFailedJobs.map((job) => (
-              <article className="failure-item" key={job.id}>
-                <div>
-                  <p className="kicker" style={{ color: "var(--error)" }}>
-                    {formatJobType(job.jobType)}
-                  </p>
-                  <h3>{job.contentItem.sourceTitle}</h3>
-                  <p className="muted">
-                    {job.finishedAt?.toLocaleString() ?? job.updatedAt.toLocaleString()} · {job.model ?? "No model recorded"}
-                  </p>
-                </div>
-                <p className="failure-message">{formatErrorMessage(job.errorMessage)}</p>
+              <details className="failure-item" key={job.id}>
+                <summary className="failure-item-summary">
+                  <span>
+                    <span className="kicker" style={{ color: "var(--error)" }}>
+                      {formatJobType(job.jobType)}
+                    </span>
+                    <span className="failure-title">{job.contentItem.sourceTitle}</span>
+                    <span className="muted">
+                      {job.finishedAt?.toLocaleString() ?? job.updatedAt.toLocaleString()} · {job.model ?? "No model recorded"}
+                    </span>
+                  </span>
+                  <span className="failure-message">{job.errorMessage ?? "No error message was captured."}</span>
+                </summary>
+                <pre className="failure-detail">{formatJson(job.responsePayload)}</pre>
                 <Link className="btn btn-secondary" href={`/admin/content/${job.contentItem.id}/edit`}>
-                  Open
+                  Open Content
                 </Link>
-              </article>
+              </details>
             ))}
           </div>
-        </section>
+        </details>
       ) : null}
     </AdminShell>
   );
