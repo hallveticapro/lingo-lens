@@ -220,6 +220,14 @@ img {
   margin: 0;
 }
 
+.centered-title {
+  text-align: center;
+}
+
+.how-section {
+  background: var(--surface-low);
+}
+
 .steps {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -231,6 +239,21 @@ img {
 .step-card svg {
   margin: 0 auto 22px;
   color: var(--navy-deep);
+}
+
+.step-card h3 {
+  margin: 0 0 14px;
+  color: var(--navy-deep);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.step-card p {
+  max-width: 240px;
+  margin: 0 auto;
+  color: var(--muted);
+  line-height: 1.6;
 }
 
 .kicker {
@@ -994,6 +1017,17 @@ details[open] > summary .icon-open {
 
 .feed-card {
   padding: 26px;
+}
+
+.feed-url {
+  overflow-wrap: anywhere;
+}
+
+.copy-feed {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 @media (max-width: 980px) {

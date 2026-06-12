@@ -1,8 +1,10 @@
 import { expect, test } from "@playwright/test";
 
-test("public reading surfaces load from seeded data", async ({ page }) => {
+test("public reading surfaces load from seeded data", async ({ context, page }) => {
+  await context.grantPermissions(["clipboard-write"]);
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "Read the world in Spanish at your level." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "How LingoLens Works" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Latest Adapted Articles" })).toBeVisible();
 
   await page.goto("/articles");
@@ -16,6 +18,8 @@ test("public reading surfaces load from seeded data", async ({ page }) => {
   await page.goto("/feeds");
   await expect(page.getByRole("heading", { name: "Subscribe by reading level." })).toBeVisible();
   await expect(page.getByRole("link", { name: /Open Feed/i }).first()).toBeVisible();
+  await page.getByRole("button", { name: "Copy URL" }).first().click();
+  await expect(page.getByRole("button", { name: "Copied" }).first()).toBeVisible();
 });
 
 test("admin login supports keyboard focus and invalid credential feedback", async ({ page }) => {

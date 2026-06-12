@@ -487,6 +487,7 @@ The audit found **no confirmed P0 issues**. Keep this phase as a release gate: i
   - Command: `pnpm build` passes.
   - Browser smoke: desktop and mobile screenshots of `/`, `/articles`, and `/feeds` show the new section, chips, and copy controls.
   - Browser smoke: clicking a feed copy button shows feedback and places the URL on the clipboard where the browser permits it.
+  - 2026-06-12: Added the Stitch-style “How LingoLens Works” section, source/locale/level chips on article cards, copyable absolute feed URLs with clipboard feedback, and e2e coverage for the section/copy action. `pnpm lint`, `pnpm typecheck`, `pnpm build`, and `pnpm test:e2e` passed; build still reports the known Turbopack NFT warning.
 - **Validation command:**
   ```bash
   pnpm lint && pnpm exec tsc --noEmit --pretty false && pnpm build
