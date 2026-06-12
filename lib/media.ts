@@ -5,6 +5,7 @@ import { BlockList, isIP } from "node:net";
 import path from "node:path";
 import sharp from "sharp";
 import { maxRemoteImageBytes, uploadDir as configuredUploadDir } from "@/lib/env";
+import { isLocalMediaUrl } from "@/lib/media-urls";
 import { prisma } from "@/lib/prisma";
 
 const mediaRoot = "media";
@@ -181,6 +182,26 @@ function mediaUrl(storageKey: string) {
   return `/media/${storageKey.split(path.sep).join("/")}`;
 }
 
+function externalWebUrl(url: string | null | undefined) {
+  if (!url || isLocalMediaUrl(url)) return null;
+  try {
+    const parsed = new URL(url);
+    assertHttpUrl(parsed);
+    return parsed.toString();
+  } catch {
+    return null;
+  }
+}
+
+export async function mediaFallbackUrl(storageKey: string) {
+  const media = await prisma.mediaAsset.findFirst({
+    where: { storageKey },
+    select: { publicUrl: true, sourceUrl: true }
+  });
+
+  return externalWebUrl(media?.sourceUrl) ?? externalWebUrl(media?.publicUrl);
+}
+
 async function removeLocalMedia(storageKey: string | null) {
   if (!storageKey) return;
   await rm(mediaPath(storageKey), { force: true }).catch(() => undefined);
@@ -193,7 +214,7 @@ export async function optimizeHeaderImageForContent(contentItemId: string) {
   });
 
   const media = content?.headerMediaAsset;
-  if (!media?.publicUrl || media.publicUrl.startsWith("/media/")) return;
+  if (!media?.publicUrl || isLocalMediaUrl(media.publicUrl)) return;
 
   const originalUrl = media.publicUrl;
   console.info(

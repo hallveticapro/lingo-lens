@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { downloadRemoteImageBytes, isBlockedRemoteAddress } from "@/lib/media";
+import { shouldBypassImageOptimization } from "@/lib/media-urls";
 
 const publicLookup = async () => [{ address: "93.184.216.34", family: 4 }];
 
@@ -76,5 +77,13 @@ describe("downloadRemoteImageBytes", () => {
         timeoutMs: 1
       })
     ).rejects.toThrow("timed out");
+  });
+});
+
+describe("shouldBypassImageOptimization", () => {
+  it("bypasses optimization for remote and local media route images", () => {
+    expect(shouldBypassImageOptimization("https://example.com/image.webp")).toBe(true);
+    expect(shouldBypassImageOptimization("/media/media/example.webp")).toBe(true);
+    expect(shouldBypassImageOptimization("/brand/og-image.jpg")).toBe(false);
   });
 });

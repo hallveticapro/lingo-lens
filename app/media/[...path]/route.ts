@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { readMedia } from "@/lib/media";
+import { mediaFallbackUrl, readMedia } from "@/lib/media";
 
 export const dynamic = "force-dynamic";
 
@@ -18,6 +18,8 @@ export async function GET(_request: Request, { params }: { params: Promise<{ pat
       }
     });
   } catch {
+    const fallbackUrl = await mediaFallbackUrl(storageKey);
+    if (fallbackUrl) return Response.redirect(fallbackUrl, 307);
     notFound();
   }
 }

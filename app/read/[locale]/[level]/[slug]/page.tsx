@@ -9,6 +9,7 @@ import { ReadingLevelSwitcher } from "@/components/ReadingLevelSwitcher";
 import { ReaderPreferences } from "@/components/ReaderPreferences";
 import { prisma } from "@/lib/prisma";
 import { levelKeyToSlug, levelSlugToKey } from "@/lib/level";
+import { shouldBypassImageOptimization } from "@/lib/media-urls";
 import type { QuestionItem, VocabularyItem } from "@/lib/parsers";
 
 export const dynamic = "force-dynamic";
@@ -90,7 +91,7 @@ export default async function ReadingPage({ params }: { params: Promise<Params> 
                     width={1200}
                     height={770}
                     sizes="(max-width: 900px) 100vw, 720px"
-                    unoptimized={!imageUrl.startsWith("/")}
+                    unoptimized={shouldBypassImageOptimization(imageUrl)}
                   />
                   {imageCaption ? (
                     <p className="caption">{imageCaption}</p>
