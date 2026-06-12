@@ -11,9 +11,34 @@ function formatJobType(jobType: string) {
   return jobType.replaceAll("_", " ");
 }
 
+function normalizeJsonDetail(value: unknown): unknown {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if ((trimmed.startsWith("{") && trimmed.endsWith("}")) || (trimmed.startsWith("[") && trimmed.endsWith("]"))) {
+      try {
+        return normalizeJsonDetail(JSON.parse(trimmed));
+      } catch {
+        return value;
+      }
+    }
+    return value;
+  }
+
+  if (Array.isArray(value)) {
+    return value.map(normalizeJsonDetail);
+  }
+
+  if (value && typeof value === "object") {
+    if (value instanceof Date) return value.toISOString();
+    return Object.fromEntries(Object.entries(value).map(([key, entry]) => [key, normalizeJsonDetail(entry)]));
+  }
+
+  return value;
+}
+
 function formatJson(value: unknown) {
   if (value === null || value === undefined) return "No structured details were captured.";
-  return JSON.stringify(value, null, 2);
+  return JSON.stringify(normalizeJsonDetail(value), null, 2);
 }
 
 type AdminDashboardProps = {
@@ -207,7 +232,12 @@ export default async function AdminDashboard({ searchParams }: AdminDashboardPro
                   </span>
                   <span className="failure-message">{job.errorMessage ?? "No error message was captured."}</span>
                 </summary>
-                <pre className="failure-detail">{formatJson(job.responsePayload)}</pre>
+                <pre className="failure-detail">
+                  {formatJson({
+                    message: job.errorMessage,
+                    details: job.responsePayload
+                  })}
+                </pre>
                 <Link className="btn btn-secondary" href={`/admin/content/${job.contentItem.id}/edit`}>
                   Open Content
                 </Link>
