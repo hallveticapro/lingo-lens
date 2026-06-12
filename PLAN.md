@@ -196,6 +196,7 @@ The audit found **no confirmed P0 issues**. Keep this phase as a release gate: i
   - Command: `pnpm exec tsc --noEmit --pretty false` or `pnpm typecheck` passes.
   - Command: `pnpm build` passes.
   - Browser smoke: forced provider failure appears in admin without exposing raw payloads.
+  - 2026-06-12: Added de-duplicated missing-level validation, stable failure categories for validation/schema/provider/rate-limit/network/unknown failures, bounded JSON-safe failure payloads with retry guidance, and admin display of category/guidance. Focused `pnpm test -- generation` covered invalid level keys, malformed JSON/schema errors, and rate limits. `pnpm lint`, `pnpm typecheck`, and `pnpm build` passed with known raw-image/NFT warnings.
 - **Validation command:**
   ```bash
   pnpm lint && pnpm exec tsc --noEmit --pretty false && pnpm build

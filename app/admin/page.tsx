@@ -45,6 +45,15 @@ function formatJson(value: unknown) {
   return JSON.stringify(normalizeJsonDetail(value), null, 2);
 }
 
+function failureGuidance(value: unknown) {
+  const detail = normalizeJsonDetail(value);
+  if (detail && typeof detail === "object" && !Array.isArray(detail)) {
+    const guidance = (detail as Record<string, unknown>).guidance;
+    return typeof guidance === "string" ? guidance : null;
+  }
+  return null;
+}
+
 type AdminDashboardProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
@@ -229,6 +238,7 @@ export default async function AdminDashboard({ searchParams }: AdminDashboardPro
           <div className="failure-list">
             {recentGenerationJobs.map((job) => {
               const canRetry = ["failed", "running"].includes(job.status) && job.attempts < job.maxAttempts;
+              const guidance = failureGuidance(job.responsePayload);
               return (
               <details className="failure-item" key={job.id}>
                 <summary className="failure-item-summary">
@@ -256,9 +266,11 @@ export default async function AdminDashboard({ searchParams }: AdminDashboardPro
                     status: job.status,
                     category: job.errorCategory,
                     message: job.errorMessage,
+                    guidance,
                     details: job.responsePayload
                   })}
                 </pre>
+                {guidance ? <p className="muted">{guidance}</p> : null}
                 <div className="button-row" style={{ justifyContent: "flex-start" }}>
                   <Link className="btn btn-secondary" href={`/admin/content/${job.contentItem.id}/edit`}>
                     Open Content

@@ -148,6 +148,11 @@ export function classifyGenerationError(error: unknown): GenerationFailureCatego
   return "unknown";
 }
 
+export function missingReadingLevelKeys(requestedKeys: string[], foundKeys: string[]) {
+  const found = new Set(foundKeys);
+  return Array.from(new Set(requestedKeys.map((key) => key.trim()).filter(Boolean))).filter((key) => !found.has(key));
+}
+
 function retryGuidance(category: GenerationFailureCategory) {
   if (category === "validation") return "Review the source content, locale, and selected levels before retrying.";
   if (category === "rate_limit") return "Wait briefly, then retry the job.";
@@ -452,8 +457,10 @@ async function resolveGenerationInputs(contentItemId: string, targetLocaleTag: s
     orderBy: { sortOrder: "asc" }
   });
 
-  const foundKeys = new Set(levels.map((level) => level.key));
-  const missingKeys = requestedLevelKeys.filter((key) => !foundKeys.has(key));
+  const missingKeys = missingReadingLevelKeys(
+    requestedLevelKeys,
+    levels.map((level) => level.key)
+  );
   if (missingKeys.length > 0) {
     throw new GenerationError("validation", `Unknown reading level keys: ${missingKeys.join(", ")}`, {
       requestedLevelKeys,
