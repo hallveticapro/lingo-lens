@@ -195,6 +195,10 @@ img {
   padding: 82px 0;
 }
 
+.page-band {
+  min-height: 64vh;
+}
+
 .section-title {
   font-family: var(--font-display);
   font-size: 34px;
@@ -242,6 +246,21 @@ img {
   grid-template-columns: repeat(3, 1fr);
   gap: 56px;
   margin-top: 48px;
+}
+
+.article-grid-wide {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.section-action {
+  display: flex;
+  justify-content: center;
+  margin-top: 54px;
+}
+
+.empty-copy {
+  margin-top: 40px;
+  font-size: 1.1rem;
 }
 
 .article-card {
@@ -326,6 +345,28 @@ img {
   padding: 54px 0 90px;
 }
 
+.reader-content {
+  animation: reader-fade-in 220ms ease-out both;
+  transition: opacity 150ms ease, transform 150ms ease;
+}
+
+html.reader-leaving .reader-content {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+@keyframes reader-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .breadcrumb {
   font-size: 12px;
   color: var(--muted);
@@ -369,7 +410,7 @@ img {
 .level-switcher {
   width: fit-content;
   max-width: 100%;
-  margin: 28px auto 52px;
+  margin: 8px auto 32px;
   padding: 6px;
   border: 1px solid var(--surface-highest);
   border-radius: 999px;

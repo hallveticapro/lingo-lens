@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { Rss } from "lucide-react";
+import { BookOpen, Rss } from "lucide-react";
 
 export function PublicHeader() {
   return (
@@ -10,10 +10,8 @@ export function PublicHeader() {
           LingoLens
         </Link>
         <nav className="nav-links" aria-label="Primary navigation">
-          <Link href="/#levels">Reading Level</Link>
+          <Link href="/articles">Articles</Link>
           <Link href="/feeds">RSS</Link>
-          <Link href="/admin">Admin</Link>
-          <Link href="/admin/login">Login</Link>
         </nav>
       </div>
     </header>
@@ -32,12 +30,14 @@ export function PublicFooter() {
         <div>
           <p className="kicker">Platform</p>
           <p>
-            <Link href="/feeds">
-              <Rss size={14} /> RSS Feed
+            <Link href="/articles">
+              <BookOpen size={14} /> Articles
             </Link>
           </p>
           <p>
-            <Link href="/admin">Admin</Link>
+            <Link href="/feeds">
+              <Rss size={14} /> RSS Feed
+            </Link>
           </p>
         </div>
         <div>

@@ -4,6 +4,7 @@ import { BookOpen, Languages, Rss } from "lucide-react";
 import { DocumentLanguage } from "@/components/DocumentLanguage";
 import { Markdown } from "@/components/Markdown";
 import { PublicShell } from "@/components/PublicChrome";
+import { ReadingLevelSwitcher } from "@/components/ReadingLevelSwitcher";
 import { prisma } from "@/lib/prisma";
 import { levelKeyToSlug, levelSlugToKey } from "@/lib/level";
 import type { QuestionItem, VocabularyItem } from "@/lib/parsers";
@@ -51,11 +52,19 @@ export default async function ReadingPage({ params }: { params: Promise<Params> 
   const questions = Array.isArray(adaptation.comprehensionQuestions)
     ? (adaptation.comprehensionQuestions as QuestionItem[])
     : [];
+  const levelLinks = availableLevels.map((item) => ({
+    id: item.id,
+    label: item.readingLevel.displayName,
+    isCurrent: item.readingLevel.key === adaptation.readingLevel.key,
+    href: `/read/${adaptation.targetLocale.bcp47Tag}/${levelKeyToSlug(
+      item.readingLevel.key
+    )}/${adaptation.contentItem.slug}`
+  }));
 
   return (
     <PublicShell>
       <DocumentLanguage lang={adaptation.targetLocale.bcp47Tag} dir={adaptation.targetLocale.direction} />
-      <div className="container reader-layout">
+      <div className="container reader-layout reader-content">
         <article lang={adaptation.targetLocale.bcp47Tag} dir={adaptation.targetLocale.direction}>
               <nav className="breadcrumb" aria-label="Breadcrumb">
                 <Link href="/">Home</Link>
@@ -64,10 +73,7 @@ export default async function ReadingPage({ params }: { params: Promise<Params> 
                 <span>›</span>
                 <span>{adaptation.readingLevel.displayName}</span>
               </nav>
-              <div className="chip-row" style={{ justifyContent: "center" }}>
-                <span className="badge">{adaptation.readingLevel.displayName}</span>
-                <span className="badge">{adaptation.targetLocale.bcp47Tag}</span>
-              </div>
+              <ReadingLevelSwitcher levels={levelLinks} />
               <h1 className="article-title">{adaptation.title}</h1>
               {adaptation.summary ? <p className="dek">{adaptation.summary}</p> : null}
               <div className="meta-line">
@@ -89,20 +95,6 @@ export default async function ReadingPage({ params }: { params: Promise<Params> 
                   ) : null}
                 </>
               ) : null}
-
-              <nav className="level-switcher" aria-label="Reading levels">
-                {availableLevels.map((item) => (
-                  <Link
-                    key={item.id}
-                    href={`/read/${adaptation.targetLocale.bcp47Tag}/${levelKeyToSlug(
-                      item.readingLevel.key
-                    )}/${adaptation.contentItem.slug}`}
-                    aria-current={item.readingLevel.key === adaptation.readingLevel.key ? "page" : undefined}
-                  >
-                    {item.readingLevel.displayName}
-                  </Link>
-                ))}
-              </nav>
 
               <Markdown className="reader-body">{adaptation.bodyMarkdown}</Markdown>
         </article>

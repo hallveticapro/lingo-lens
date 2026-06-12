@@ -8,6 +8,7 @@ import {
   saveAdaptationAction
 } from "@/app/admin/actions";
 import { AdminShell } from "@/components/AdminChrome";
+import { PublishSubmitToast } from "@/components/PublishSubmitToast";
 import { formatQuestions, formatVocabulary } from "@/lib/parsers";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -44,6 +45,7 @@ export default async function ReviewPage({
 
   return (
     <AdminShell>
+      <PublishSubmitToast />
       <div className="admin-header" style={{ borderBottom: 0, paddingBottom: 0 }}>
         <div>
           <span className="chip">Review Mode</span>
@@ -51,7 +53,7 @@ export default async function ReviewPage({
             Review: {content.sourceTitle}
           </h1>
         </div>
-        <form action={publishAllAction.bind(null, content.id)}>
+        <form action={publishAllAction.bind(null, content.id)} data-publish-form="true">
           <button className="btn btn-primary" type="submit">
             Publish All Reviewed
           </button>
@@ -167,7 +169,7 @@ export default async function ReviewPage({
                       <RotateCcw size={16} /> Regenerate This Level
                     </button>
                   </form>
-                  <form action={publishAdaptationAction.bind(null, selected.id)}>
+                  <form action={publishAdaptationAction.bind(null, selected.id)} data-publish-form="true">
                     <button className="btn btn-primary" type="submit">
                       Publish This Level
                     </button>

@@ -269,6 +269,14 @@ async function canPublish(contentItemId: string) {
   );
 }
 
+async function publishCounts(contentItemId: string) {
+  const [published, total] = await Promise.all([
+    prisma.adaptation.count({ where: { contentItemId, status: "published" } }),
+    prisma.adaptation.count({ where: { contentItemId, status: { not: "archived" } } })
+  ]);
+  return { published, total };
+}
+
 export async function publishAdaptationAction(adaptationId: string) {
   const session = await requireAdmin();
   const adaptation = await prisma.adaptation.findUniqueOrThrow({ where: { id: adaptationId } });
@@ -290,7 +298,8 @@ export async function publishAdaptationAction(adaptationId: string) {
   });
   revalidatePath("/");
   revalidatePath("/admin");
-  redirect(`/admin/content/${adaptation.contentItemId}/review`);
+  const counts = await publishCounts(adaptation.contentItemId);
+  redirect(`/admin?published=${counts.published}&total=${counts.total}`);
 }
 
 export async function publishAllAction(contentItemId: string) {
@@ -313,7 +322,8 @@ export async function publishAllAction(contentItemId: string) {
   });
   revalidatePath("/");
   revalidatePath("/admin");
-  redirect(`/admin/content/${contentItemId}/review`);
+  const counts = await publishCounts(contentItemId);
+  redirect(`/admin?published=${counts.published}&total=${counts.total}`);
 }
 
 export async function archiveAdaptationAction(adaptationId: string) {
