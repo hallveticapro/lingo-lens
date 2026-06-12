@@ -19,4 +19,4 @@ ENV NODE_ENV=production
 WORKDIR /app
 COPY --from=builder /app ./
 EXPOSE 3000
-CMD ["sh", "-c", "pnpm prisma:push && pnpm seed && pnpm bootstrap-admin && pnpm start"]
+CMD ["sh", "-c", "pnpm prisma:deploy && pnpm bootstrap-admin && pnpm start"]
