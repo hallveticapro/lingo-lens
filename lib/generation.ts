@@ -1,8 +1,31 @@
 import OpenAI from "openai";
 import { Prisma } from "@prisma/client";
+import type { GenerationJob } from "@prisma/client";
 import { z } from "zod";
 import { isProduction, openAIApiKey, openAIModel } from "@/lib/env";
+import { optimizeHeaderImageForContent } from "@/lib/media";
 import { prisma } from "@/lib/prisma";
+
+export type GenerationFailureCategory = "validation" | "provider" | "rate_limit" | "network" | "schema" | "unknown";
+
+export class GenerationError extends Error {
+  constructor(
+    public readonly category: GenerationFailureCategory,
+    message: string,
+    public readonly details?: Record<string, unknown>
+  ) {
+    super(message);
+    this.name = "GenerationError";
+  }
+}
+
+type JsonInput = Prisma.InputJsonValue | null;
+type FailurePayload = Prisma.InputJsonObject & {
+  category: GenerationFailureCategory;
+  message: string;
+  guidance: string;
+  error: JsonInput;
+};
 
 function stringifyFactValue(value: unknown) {
   if (typeof value === "string") return value;
@@ -85,11 +108,80 @@ function modelName() {
   return openAIModel();
 }
 
+function boundedText(value: unknown, maxLength = 700) {
+  const text = String(value ?? "").trim();
+  if (text.length <= maxLength) return text;
+  return `${text.slice(0, maxLength)}...`;
+}
+
+function toInputJson(value: unknown): JsonInput {
+  if (value === undefined || typeof value === "function" || typeof value === "symbol") return null;
+  if (value === null || typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+    return value;
+  }
+  if (value instanceof Date) return value.toISOString();
+  if (Array.isArray(value)) return value.map((entry) => toInputJson(entry));
+  if (typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, entry]) => [key, toInputJson(entry)])
+    ) as Prisma.InputJsonObject;
+  }
+  return String(value);
+}
+
+export function classifyGenerationError(error: unknown): GenerationFailureCategory {
+  if (error instanceof GenerationError) return error.category;
+  if (error instanceof z.ZodError || error instanceof SyntaxError) return "schema";
+  if (error instanceof TypeError) return "network";
+
+  const maybeApiError = error as {
+    code?: unknown;
+    status?: unknown;
+    type?: unknown;
+    name?: unknown;
+    message?: unknown;
+  };
+
+  if (maybeApiError.status === 429 || maybeApiError.code === "rate_limit_exceeded") return "rate_limit";
+  if (typeof maybeApiError.status === "number" && maybeApiError.status >= 400) return "provider";
+  if (typeof maybeApiError.type === "string" && maybeApiError.type.includes("api")) return "provider";
+  return "unknown";
+}
+
+function retryGuidance(category: GenerationFailureCategory) {
+  if (category === "validation") return "Review the source content, locale, and selected levels before retrying.";
+  if (category === "rate_limit") return "Wait briefly, then retry the job.";
+  if (category === "network") return "Check network access from the worker, then retry the job.";
+  if (category === "schema") return "Retry once; if this repeats, adjust the prompt or generated output schema.";
+  if (category === "provider") return "Check provider availability and credentials, then retry the job.";
+  return "Review the error details and retry if the underlying issue is temporary.";
+}
+
 function errorDetails(error: unknown) {
+  if (error instanceof GenerationError) {
+    return {
+      name: error.name,
+      message: boundedText(error.message),
+      category: error.category,
+      details: error.details
+    };
+  }
+
+  if (error instanceof z.ZodError) {
+    return {
+      name: "ZodError",
+      message: "Generated content did not match the expected schema.",
+      issues: error.issues.slice(0, 8).map((issue) => ({
+        path: issue.path.join("."),
+        message: boundedText(issue.message, 220)
+      }))
+    };
+  }
+
   if (!(error instanceof Error)) {
     return {
       name: "UnknownError",
-      message: String(error)
+      message: boundedText(error)
     };
   }
 
@@ -104,7 +196,7 @@ function errorDetails(error: unknown) {
 
   const details = {
     name: error.name,
-    message: error.message,
+    message: boundedText(error.message),
     code: typeof maybeApiError.code === "string" ? maybeApiError.code : undefined,
     status: typeof maybeApiError.status === "number" ? maybeApiError.status : undefined,
     type: typeof maybeApiError.type === "string" ? maybeApiError.type : undefined,
@@ -122,8 +214,19 @@ function errorDetails(error: unknown) {
 }
 
 function errorMessage(error: unknown, fallback: string) {
+  if (error instanceof z.ZodError) return "Generated content did not match the expected schema.";
   const details = errorDetails(error);
-  return typeof details.message === "string" && details.message ? details.message : fallback;
+  return typeof details.message === "string" && details.message ? boundedText(details.message) : fallback;
+}
+
+function failurePayload(error: unknown, fallback: string): FailurePayload {
+  const category = classifyGenerationError(error);
+  return toInputJson({
+    category,
+    message: errorMessage(error, fallback),
+    guidance: retryGuidance(category),
+    error: errorDetails(error)
+  }) as FailurePayload;
 }
 
 function logGenerationError(message: string, context: Record<string, unknown>, error: unknown) {
@@ -318,12 +421,14 @@ export async function ensureFactBank(contentItemId: string) {
     return factBank;
   } catch (error) {
     logGenerationError("Fact bank generation failed", { jobId: job.id, contentItemId, model: modelName() }, error);
+    const failure = failurePayload(error, "Unknown fact bank error");
     await prisma.generationJob.update({
       where: { id: job.id },
       data: {
         status: "failed",
-        errorMessage: errorMessage(error, "Unknown fact bank error"),
-        responsePayload: { error: errorDetails(error) },
+        errorCategory: failure.category,
+        errorMessage: failure.message,
+        responsePayload: failure,
         finishedAt: new Date()
       }
     });
@@ -331,16 +436,148 @@ export async function ensureFactBank(contentItemId: string) {
   }
 }
 
-export async function generateAdaptations(contentItemId: string, targetLocaleTag: string, levelKeys: string[]) {
+async function resolveGenerationInputs(contentItemId: string, targetLocaleTag: string, levelKeys: string[]) {
+  const requestedLevelKeys = Array.from(new Set(levelKeys.map((key) => key.trim()).filter(Boolean)));
+  if (requestedLevelKeys.length === 0) {
+    throw new GenerationError("validation", "Choose at least one reading level before generating.");
+  }
+
   const content = await prisma.contentItem.findUniqueOrThrow({
     where: { id: contentItemId },
     include: { headerMediaAsset: true }
   });
   const targetLocale = await prisma.locale.findUniqueOrThrow({ where: { bcp47Tag: targetLocaleTag } });
   const levels = await prisma.readingLevel.findMany({
-    where: { key: { in: levelKeys } },
+    where: { key: { in: requestedLevelKeys } },
     orderBy: { sortOrder: "asc" }
   });
+
+  const foundKeys = new Set(levels.map((level) => level.key));
+  const missingKeys = requestedLevelKeys.filter((key) => !foundKeys.has(key));
+  if (missingKeys.length > 0) {
+    throw new GenerationError("validation", `Unknown reading level keys: ${missingKeys.join(", ")}`, {
+      requestedLevelKeys,
+      missingKeys
+    });
+  }
+
+  return { content, targetLocale, levels, levelKeys: requestedLevelKeys };
+}
+
+export async function queueGenerationJob(
+  contentItemId: string,
+  targetLocaleTag: string,
+  levelKeys: string[],
+  requestedBy?: string
+) {
+  const resolved = await resolveGenerationInputs(contentItemId, targetLocaleTag, levelKeys);
+
+  return prisma.$transaction(async (tx) => {
+    await tx.contentItem.update({
+      where: { id: contentItemId },
+      data: { status: "generating" }
+    });
+
+    return tx.generationJob.create({
+      data: {
+        contentItemId,
+        jobType: "generate_adaptations",
+        status: "queued",
+        targetLocaleId: resolved.targetLocale.id,
+        requestedReadingLevelIds: resolved.levels.map((level) => level.id),
+        provider: configuredApiKey() ? "openai" : "mock",
+        model: modelName(),
+        promptVersion: "v1",
+        requestPayload: {
+          targetLocaleTag,
+          levelKeys: resolved.levelKeys
+        },
+        requestedBy
+      }
+    });
+  });
+}
+
+export async function queueRegenerationJob(adaptationId: string, requestedBy?: string) {
+  const adaptation = await prisma.adaptation.findUniqueOrThrow({
+    where: { id: adaptationId },
+    include: { targetLocale: true, readingLevel: true }
+  });
+
+  return prisma.$transaction(async (tx) => {
+    await tx.contentItem.update({
+      where: { id: adaptation.contentItemId },
+      data: { status: "generating" }
+    });
+
+    return tx.generationJob.create({
+      data: {
+        contentItemId: adaptation.contentItemId,
+        jobType: "regenerate_single_adaptation",
+        status: "queued",
+        targetLocaleId: adaptation.targetLocaleId,
+        requestedReadingLevelIds: [adaptation.readingLevelId],
+        provider: configuredApiKey() ? "openai" : "mock",
+        model: modelName(),
+        promptVersion: "v1",
+        requestPayload: {
+          adaptationId,
+          targetLocaleTag: adaptation.targetLocale.bcp47Tag,
+          levelKeys: [adaptation.readingLevel.key]
+        },
+        requestedBy
+      }
+    });
+  });
+}
+
+export async function retryGenerationJob(jobId: string, requestedBy?: string) {
+  const job = await prisma.generationJob.findUniqueOrThrow({ where: { id: jobId } });
+  if (!["failed", "canceled", "running"].includes(job.status)) {
+    throw new GenerationError("validation", "Only failed, canceled, or stale running jobs can be retried.");
+  }
+  if (job.attempts >= job.maxAttempts) {
+    throw new GenerationError("validation", `This job has reached its retry limit of ${job.maxAttempts} attempts.`);
+  }
+
+  await prisma.contentItem.update({
+    where: { id: job.contentItemId },
+    data: { status: "generating" }
+  });
+
+  return prisma.generationJob.update({
+    where: { id: jobId },
+    data: {
+      status: "queued",
+      startedAt: null,
+      finishedAt: null,
+      requestedBy: requestedBy ?? job.requestedBy
+    }
+  });
+}
+
+async function updateContentAfterGenerationFailure(contentItemId: string) {
+  const adaptationCount = await prisma.adaptation.count({
+    where: { contentItemId, status: { not: "archived" } }
+  });
+
+  await prisma.contentItem.update({
+    where: { id: contentItemId },
+    data: { status: adaptationCount > 0 ? "needs_review" : "draft" }
+  });
+}
+
+export async function generateAdaptations(
+  contentItemId: string,
+  targetLocaleTag: string,
+  levelKeys: string[],
+  options: { jobId?: string } = {}
+) {
+  const { content, targetLocale, levels, levelKeys: requestedLevelKeys } = await resolveGenerationInputs(
+    contentItemId,
+    targetLocaleTag,
+    levelKeys
+  );
   const factBank = await ensureFactBank(contentItemId);
   const factData = {
     facts: factBank.facts as string[],
@@ -357,19 +594,38 @@ export async function generateAdaptations(contentItemId: string, targetLocaleTag
     data: { status: "generating" }
   });
 
-  const job = await prisma.generationJob.create({
-    data: {
-      contentItemId,
-      jobType: "generate_adaptations",
-      status: "running",
-      targetLocaleId: targetLocale.id,
-      requestedReadingLevelIds: levels.map((level) => level.id),
-      model: modelName(),
-      promptVersion: "v1",
-      requestPayload: { targetLocaleTag, levelKeys },
-      startedAt: new Date()
-    }
-  });
+  const job = options.jobId
+    ? await prisma.generationJob.update({
+        where: { id: options.jobId },
+        data: {
+          status: "running",
+          targetLocaleId: targetLocale.id,
+          requestedReadingLevelIds: levels.map((level) => level.id),
+          provider: configuredApiKey() ? "openai" : "mock",
+          model: modelName(),
+          promptVersion: "v1",
+          requestPayload: { targetLocaleTag, levelKeys: requestedLevelKeys },
+          errorCategory: null,
+          errorMessage: null,
+          startedAt: new Date(),
+          finishedAt: null
+        }
+      })
+    : await prisma.generationJob.create({
+        data: {
+          contentItemId,
+          jobType: "generate_adaptations",
+          status: "running",
+          targetLocaleId: targetLocale.id,
+          requestedReadingLevelIds: levels.map((level) => level.id),
+          provider: configuredApiKey() ? "openai" : "mock",
+          model: modelName(),
+          promptVersion: "v1",
+          requestPayload: { targetLocaleTag, levelKeys: requestedLevelKeys },
+          attempts: 1,
+          startedAt: new Date()
+        }
+      });
 
   try {
     const client = openaiClient();
@@ -377,7 +633,7 @@ export async function generateAdaptations(contentItemId: string, targetLocaleTag
       jobId: job.id,
       contentItemId,
       targetLocaleTag,
-      levelKeys,
+      levelKeys: requestedLevelKeys,
       model: modelName(),
       provider: client ? "openai" : "mock"
     });
@@ -399,7 +655,7 @@ export async function generateAdaptations(contentItemId: string, targetLocaleTag
       });
 
       if (!profile) {
-        throw new Error(`Missing locale-level profile for ${targetLocaleTag} ${level.key}`);
+        throw new GenerationError("validation", `Missing locale-level profile for ${targetLocaleTag} ${level.key}`);
       }
 
       let parsed = mockAdaptation(level.key, content.sourceTitle, factData);
@@ -525,27 +781,26 @@ export async function generateAdaptations(contentItemId: string, targetLocaleTag
       jobId: job.id,
       contentItemId,
       targetLocaleTag,
-      levelKeys
+      levelKeys: requestedLevelKeys
     });
   } catch (error) {
     logGenerationError(
       "Adaptation generation failed",
-      { jobId: job.id, contentItemId, targetLocaleTag, levelKeys, model: modelName() },
+      { jobId: job.id, contentItemId, targetLocaleTag, levelKeys: requestedLevelKeys, model: modelName() },
       error
     );
+    const failure = failurePayload(error, "Unknown generation error");
     await prisma.generationJob.update({
       where: { id: job.id },
       data: {
         status: "failed",
-        errorMessage: errorMessage(error, "Unknown generation error"),
-        responsePayload: { error: errorDetails(error) },
+        errorCategory: failure.category,
+        errorMessage: failure.message,
+        responsePayload: failure,
         finishedAt: new Date()
       }
     });
-    await prisma.contentItem.update({
-      where: { id: contentItemId },
-      data: { status: "needs_review" }
-    });
+    await updateContentAfterGenerationFailure(contentItemId);
     throw error;
   }
 }
@@ -558,4 +813,128 @@ export async function regenerateAdaptation(adaptationId: string) {
   await generateAdaptations(adaptation.contentItemId, adaptation.targetLocale.bcp47Tag, [
     adaptation.readingLevel.key
   ]);
+}
+
+function payloadRecord(job: GenerationJob) {
+  return job.requestPayload && typeof job.requestPayload === "object" && !Array.isArray(job.requestPayload)
+    ? (job.requestPayload as Record<string, unknown>)
+    : {};
+}
+
+async function jobLocaleAndLevels(job: GenerationJob) {
+  const payload = payloadRecord(job);
+  const targetLocaleTag =
+    typeof payload.targetLocaleTag === "string"
+      ? payload.targetLocaleTag
+      : job.targetLocaleId
+        ? (await prisma.locale.findUniqueOrThrow({ where: { id: job.targetLocaleId } })).bcp47Tag
+        : null;
+
+  const requestedLevelIds = Array.isArray(job.requestedReadingLevelIds)
+    ? job.requestedReadingLevelIds.filter((id): id is string => typeof id === "string")
+    : [];
+  const levelKeys = Array.isArray(payload.levelKeys)
+    ? payload.levelKeys.filter((key): key is string => typeof key === "string")
+    : requestedLevelIds.length
+      ? (
+          await prisma.readingLevel.findMany({
+            where: { id: { in: requestedLevelIds } },
+            orderBy: { sortOrder: "asc" }
+          })
+        ).map((level) => level.key)
+      : [];
+
+  if (!targetLocaleTag) {
+    throw new GenerationError("validation", "Queued generation job is missing a target locale.");
+  }
+
+  return { targetLocaleTag, levelKeys };
+}
+
+export async function recoverStaleGenerationJobs(now = new Date(), staleAfterMs = 30 * 60 * 1000) {
+  const staleBefore = new Date(now.getTime() - staleAfterMs);
+  await prisma.$executeRaw`
+    UPDATE "generation_jobs"
+    SET
+      "status" = 'failed'::"GenerationJobStatus",
+      "errorCategory" = 'network',
+      "errorMessage" = 'Generation worker stopped before finishing and retry limit was reached.',
+      "responsePayload" = '{"category":"network","message":"Generation worker stopped before finishing and retry limit was reached.","guidance":"Check network access from the worker, then retry the job."}'::jsonb,
+      "finishedAt" = ${now},
+      "updatedAt" = NOW()
+    WHERE "status" = 'running'::"GenerationJobStatus"
+      AND "startedAt" < ${staleBefore}
+      AND "attempts" >= "maxAttempts"
+  `;
+}
+
+export async function claimNextGenerationJob(now = new Date(), staleAfterMs = 30 * 60 * 1000) {
+  const staleBefore = new Date(now.getTime() - staleAfterMs);
+  const rows = await prisma.$queryRaw<Array<{ id: string }>>`
+    UPDATE "generation_jobs"
+    SET
+      "status" = 'running'::"GenerationJobStatus",
+      "startedAt" = NOW(),
+      "finishedAt" = NULL,
+      "attempts" = "attempts" + 1,
+      "updatedAt" = NOW()
+    WHERE "id" = (
+      SELECT "id"
+      FROM "generation_jobs"
+      WHERE "jobType" IN (
+        'generate_adaptations'::"GenerationJobType",
+        'regenerate_single_adaptation'::"GenerationJobType"
+      )
+      AND (
+        "status" = 'queued'::"GenerationJobStatus"
+        OR ("status" = 'running'::"GenerationJobStatus" AND "startedAt" < ${staleBefore})
+      )
+      AND "attempts" < "maxAttempts"
+      ORDER BY "createdAt" ASC
+      FOR UPDATE SKIP LOCKED
+      LIMIT 1
+    )
+    RETURNING "id"
+  `;
+
+  const id = rows[0]?.id;
+  return id ? prisma.generationJob.findUnique({ where: { id } }) : null;
+}
+
+export async function runGenerationJob(job: GenerationJob) {
+  if (job.jobType !== "generate_adaptations" && job.jobType !== "regenerate_single_adaptation") {
+    const failure = failurePayload(
+      new GenerationError("validation", `Unsupported generation job type: ${job.jobType}`),
+      "Unsupported generation job type."
+    );
+    await prisma.generationJob.update({
+      where: { id: job.id },
+      data: {
+        status: "failed",
+        errorCategory: failure.category,
+        errorMessage: failure.message,
+        responsePayload: failure,
+        finishedAt: new Date()
+      }
+    });
+    return;
+  }
+
+  const { targetLocaleTag, levelKeys } = await jobLocaleAndLevels(job);
+  await generateAdaptations(job.contentItemId, targetLocaleTag, levelKeys, { jobId: job.id });
+  await optimizeHeaderImageForContent(job.contentItemId);
+}
+
+export async function processNextGenerationJob() {
+  await recoverStaleGenerationJobs();
+  const job = await claimNextGenerationJob();
+  if (!job) return false;
+
+  try {
+    await runGenerationJob(job);
+  } catch {
+    // generateAdaptations records the failure payload on the job.
+  }
+
+  return true;
 }

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { AlertCircle, CheckCircle2, ChevronDown, CirclePlus, FilePlus2, Pencil, RotateCw } from "lucide-react";
-import { archiveContentAction, clearGenerationErrorsAction } from "@/app/admin/actions";
+import { archiveContentAction, clearGenerationErrorsAction, retryGenerationJobAction } from "@/app/admin/actions";
 import { AdminShell } from "@/components/AdminChrome";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
@@ -9,6 +9,10 @@ export const dynamic = "force-dynamic";
 
 function formatJobType(jobType: string) {
   return jobType.replaceAll("_", " ");
+}
+
+function formatJobStatus(status: string) {
+  return status.replaceAll("_", " ");
 }
 
 function normalizeJsonDetail(value: unknown): unknown {
@@ -52,7 +56,7 @@ export default async function AdminDashboard({ searchParams }: AdminDashboardPro
   const publishedCount = typeof params.published === "string" ? Number(params.published) : null;
   const publishTotal = typeof params.total === "string" ? Number(params.total) : null;
   const showPublishedToast = Number.isFinite(publishedCount) && Number.isFinite(publishTotal);
-  const [items, published, drafts, review, failedJobCount, recentFailedJobs] = await Promise.all([
+  const [items, published, drafts, review, failedJobCount, activeJobCount, recentGenerationJobs] = await Promise.all([
     prisma.contentItem.findMany({
       include: {
         sourceLocale: true,
@@ -65,8 +69,9 @@ export default async function AdminDashboard({ searchParams }: AdminDashboardPro
     prisma.contentItem.count({ where: { status: "draft" } }),
     prisma.contentItem.count({ where: { status: "needs_review" } }),
     prisma.generationJob.count({ where: { status: "failed" } }),
+    prisma.generationJob.count({ where: { status: { in: ["queued", "running"] } } }),
     prisma.generationJob.findMany({
-      where: { status: "failed" },
+      where: { status: { in: ["queued", "running", "failed"] } },
       include: {
         contentItem: {
           select: {
@@ -75,8 +80,8 @@ export default async function AdminDashboard({ searchParams }: AdminDashboardPro
           }
         }
       },
-      orderBy: { finishedAt: "desc" },
-      take: 5
+      orderBy: { updatedAt: "desc" },
+      take: 8
     })
   ]);
 
@@ -131,7 +136,7 @@ export default async function AdminDashboard({ searchParams }: AdminDashboardPro
           </p>
           <p className="metric">{failedJobCount}</p>
           <p style={{ color: "var(--error)" }}>
-            <AlertCircle size={16} /> API errors
+            <AlertCircle size={16} /> {activeJobCount} active
           </p>
         </div>
       </section>
@@ -199,7 +204,7 @@ export default async function AdminDashboard({ searchParams }: AdminDashboardPro
         </table>
       </section>
 
-      {recentFailedJobs.length > 0 ? (
+      {recentGenerationJobs.length > 0 ? (
         <details className="admin-card failure-panel">
           <summary className="failure-panel-summary">
             <span className="disclosure-icon" aria-hidden="true">
@@ -207,22 +212,24 @@ export default async function AdminDashboard({ searchParams }: AdminDashboardPro
               <ChevronDown className="icon-open" size={18} />
             </span>
             <span>
-              <span className="section-title">Recent Generation Failures</span>
-              <span className="muted"> {failedJobCount} errors</span>
+              <span className="section-title">Generation Queue</span>
+              <span className="muted"> {activeJobCount} active, {failedJobCount} failed</span>
             </span>
           </summary>
           <div className="failure-toolbar">
             <p className="muted">
-              These messages also appear in Docker logs with <code>scope=generation</code>.
+              Queued jobs are processed by the generation worker. Failures keep safe details for retry.
             </p>
             <form action={clearGenerationErrorsAction}>
               <button className="btn btn-secondary" type="submit">
-                Clear Errors
+                Hide Failed
               </button>
             </form>
           </div>
           <div className="failure-list">
-            {recentFailedJobs.map((job) => (
+            {recentGenerationJobs.map((job) => {
+              const canRetry = ["failed", "running"].includes(job.status) && job.attempts < job.maxAttempts;
+              return (
               <details className="failure-item" key={job.id}>
                 <summary className="failure-item-summary">
                   <span className="disclosure-icon" aria-hidden="true">
@@ -235,22 +242,38 @@ export default async function AdminDashboard({ searchParams }: AdminDashboardPro
                     </span>
                     <span className="failure-title">{job.contentItem.sourceTitle}</span>
                     <span className="muted">
-                      {job.finishedAt?.toLocaleString() ?? job.updatedAt.toLocaleString()} · {job.model ?? "No model recorded"}
+                      {formatJobStatus(job.status)} · attempt {job.attempts}/{job.maxAttempts} ·{" "}
+                      {job.finishedAt?.toLocaleString() ?? job.updatedAt.toLocaleString()}
                     </span>
                   </span>
-                  <span className="failure-message">{job.errorMessage ?? "No error message was captured."}</span>
+                  <span className="failure-message">
+                    {job.errorCategory ? `${job.errorCategory}: ` : ""}
+                    {job.errorMessage ?? (job.status === "queued" ? "Waiting for the worker." : "Generation is running.")}
+                  </span>
                 </summary>
                 <pre className="failure-detail">
                   {formatJson({
+                    status: job.status,
+                    category: job.errorCategory,
                     message: job.errorMessage,
                     details: job.responsePayload
                   })}
                 </pre>
-                <Link className="btn btn-secondary" href={`/admin/content/${job.contentItem.id}/edit`}>
-                  Open Content
-                </Link>
+                <div className="button-row" style={{ justifyContent: "flex-start" }}>
+                  <Link className="btn btn-secondary" href={`/admin/content/${job.contentItem.id}/edit`}>
+                    Open Content
+                  </Link>
+                  {canRetry ? (
+                    <form action={retryGenerationJobAction.bind(null, job.id)}>
+                      <button className="btn btn-primary" type="submit">
+                        Retry Job
+                      </button>
+                    </form>
+                  ) : null}
+                </div>
               </details>
-            ))}
+            );
+            })}
           </div>
         </details>
       ) : null}

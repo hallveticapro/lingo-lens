@@ -158,6 +158,7 @@ The audit found **no confirmed P0 issues**. Keep this phase as a release gate: i
   - Command: `pnpm exec tsc --noEmit --pretty false` or `pnpm typecheck` passes.
   - Command: `pnpm build` passes.
   - Browser smoke: admin generation request shows queued/running status, and retry appears after a forced failure.
+  - 2026-06-12: Replaced detached server-action generation with queued `GenerationJob` rows, added a generation worker command/service, atomic Postgres job claiming, stale-running recovery, bounded retry fields, retry action, and admin queue status display. `rg "void Promise|Promise.allSettled" app/admin/actions.ts lib/generation.ts` is clean. Focused `pnpm test -- generation`, `pnpm prisma generate`, `pnpm lint`, `pnpm typecheck`, and `pnpm build` passed; lint/build still report the known raw-image/NFT warnings scheduled for later phases.
 - **Validation command:**
   ```bash
   pnpm lint && pnpm exec tsc --noEmit --pretty false && pnpm build

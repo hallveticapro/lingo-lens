@@ -276,6 +276,9 @@ model GenerationJob {
   estimatedCostCents       Int?
   requestPayload           Json?
   responsePayload          Json?
+  attempts                 Int                 @default(0)
+  maxAttempts              Int                 @default(3)
+  errorCategory            String?
   errorMessage             String?
   startedAt                DateTime?
   finishedAt               DateTime?

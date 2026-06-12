@@ -9,12 +9,15 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit --pretty false",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "audit": "pnpm audit --audit-level low",
     "prisma": "prisma",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
     "seed": "tsx prisma/seed.ts",
+    "worker:generation": "tsx scripts/generation-worker.ts",
     "bootstrap-admin": "tsx scripts/bootstrap-admin.mjs"
   },
   "dependencies": {
@@ -41,7 +44,8 @@
     "prisma": "6.19.3",
     "tsx": "4.22.4",
     "typescript": "6.0.3",
-    "typescript-eslint": "8.61.0"
+    "typescript-eslint": "8.61.0",
+    "vitest": "4.1.8"
   },
   "packageManager": "pnpm@11.5.2"
 }

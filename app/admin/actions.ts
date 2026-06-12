@@ -5,8 +5,7 @@ import { redirect } from "next/navigation";
 import { Prisma } from "@prisma/client";
 import { clearSession, createSession, requireAdmin, verifyAdminCredentials } from "@/lib/auth";
 import { requireRightsApproval } from "@/lib/env";
-import { generateAdaptations, regenerateAdaptation } from "@/lib/generation";
-import { optimizeHeaderImageForContent } from "@/lib/media";
+import { queueGenerationJob, queueRegenerationJob, retryGenerationJob } from "@/lib/generation";
 import { parseQuestions, parseVocabulary } from "@/lib/parsers";
 import { prisma } from "@/lib/prisma";
 import { slugify } from "@/lib/slug";
@@ -45,38 +44,17 @@ export async function clearGenerationErrorsAction() {
     where: { status: "failed" },
     data: {
       status: "canceled",
-      errorMessage: null,
-      responsePayload: Prisma.JsonNull
+      finishedAt: new Date()
     }
   });
   revalidatePath("/admin");
 }
 
-async function queueGeneration(contentItemId: string, targetLocale: string, levels: string[]) {
-  await prisma.contentItem.update({
-    where: { id: contentItemId },
-    data: { status: "generating" }
-  });
-
-  void Promise.allSettled([
-    generateAdaptations(contentItemId, targetLocale, levels),
-    optimizeHeaderImageForContent(contentItemId)
-  ]).then((results) => {
-    const generation = results[0];
-    if (generation.status !== "rejected") return;
-    const error = generation.reason;
-    console.error(
-      JSON.stringify({
-        level: "error",
-        scope: "generation",
-        message: "Queued generation failed",
-        contentItemId,
-        targetLocale,
-        levels,
-        error: error instanceof Error ? { name: error.name, message: error.message } : { message: String(error) }
-      })
-    );
-  });
+export async function retryGenerationJobAction(jobId: string) {
+  const session = await requireAdmin();
+  await retryGenerationJob(jobId, session.email);
+  revalidatePath("/admin");
+  redirect("/admin?generation=queued");
 }
 
 function formPayload(formData: FormData) {
@@ -100,7 +78,7 @@ function formPayload(formData: FormData) {
 }
 
 export async function createContentAction(formData: FormData) {
-  await requireAdmin();
+  const session = await requireAdmin();
   const payload = contentFormSchema.parse(formPayload(formData));
   const intent = stringFromForm(formData, "intent");
   const sourceLocale = await prisma.locale.findUniqueOrThrow({ where: { bcp47Tag: payload.sourceLocale } });
@@ -146,7 +124,7 @@ export async function createContentAction(formData: FormData) {
   });
 
   if (intent === "generate") {
-    await queueGeneration(content.id, payload.targetLocale, payload.levels);
+    await queueGenerationJob(content.id, payload.targetLocale, payload.levels, session.email);
     revalidatePath("/admin");
     redirect("/admin?generation=queued");
   }
@@ -156,7 +134,7 @@ export async function createContentAction(formData: FormData) {
 }
 
 export async function updateContentAction(contentId: string, formData: FormData) {
-  await requireAdmin();
+  const session = await requireAdmin();
   const payload = contentFormSchema.parse(formPayload(formData));
   const intent = stringFromForm(formData, "intent");
   const sourceLocale = await prisma.locale.findUniqueOrThrow({ where: { bcp47Tag: payload.sourceLocale } });
@@ -208,7 +186,7 @@ export async function updateContentAction(contentId: string, formData: FormData)
   });
 
   if (intent === "generate") {
-    await queueGeneration(contentId, payload.targetLocale, payload.levels);
+    await queueGenerationJob(contentId, payload.targetLocale, payload.levels, session.email);
     revalidatePath("/admin");
     redirect("/admin?generation=queued");
   }
@@ -273,11 +251,11 @@ export async function saveAdaptationAction(adaptationId: string, formData: FormD
 }
 
 export async function regenerateAdaptationAction(adaptationId: string) {
-  await requireAdmin();
+  const session = await requireAdmin();
   const adaptation = await prisma.adaptation.findUniqueOrThrow({ where: { id: adaptationId } });
-  await regenerateAdaptation(adaptationId);
+  await queueRegenerationJob(adaptationId, session.email);
   revalidatePath("/admin");
-  redirect(`/admin/content/${adaptation.contentItemId}/review`);
+  redirect(`/admin/content/${adaptation.contentItemId}/review?generation=queued`);
 }
 
 async function canPublish(contentItemId: string) {

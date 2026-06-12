@@ -36,3 +36,23 @@ services:
       - "${HOST_PORT:-3000}:${APP_PORT:-3000}"
     volumes:
       - ${DATA_DIR:-./data}/uploads:/app/uploads
+
+  worker:
+    image: ${IMAGE_REPO:-lingo-lens-app}:${IMAGE_TAG:-latest}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: lingo-lens-worker
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql://lingo_lens:change-me@db:5432/lingo_lens}
+      UPLOAD_DIR: ${UPLOAD_DIR:-/app/uploads}
+    command: ["pnpm", "worker:generation"]
+    volumes:
+      - ${DATA_DIR:-./data}/uploads:/app/uploads
