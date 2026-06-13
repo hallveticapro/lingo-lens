@@ -20,6 +20,13 @@ type Params = {
   slug: string;
 };
 
+function vocabularyPartOfSpeech(item: VocabularyItem) {
+  const partOfSpeech = item.part_of_speech?.trim();
+  if (partOfSpeech) return partOfSpeech;
+  if (/^to\s+\S+/i.test(item.meaning_en.trim())) return "verb";
+  return "part of speech pending";
+}
+
 export default async function ReadingPage({ params }: { params: Promise<Params> }) {
   const { locale, level, slug } = await params;
   const levelKey = levelSlugToKey(level);
@@ -55,6 +62,10 @@ export default async function ReadingPage({ params }: { params: Promise<Params> 
   const questions = Array.isArray(adaptation.comprehensionQuestions)
     ? (adaptation.comprehensionQuestions as QuestionItem[])
     : [];
+  const vocabularyWithDisplay = vocabulary.map((item) => ({
+    ...item,
+    partOfSpeech: vocabularyPartOfSpeech(item)
+  }));
   const levelLinks = availableLevels.map((item) => ({
     id: item.id,
     label: item.readingLevel.displayName,
@@ -110,16 +121,18 @@ export default async function ReadingPage({ params }: { params: Promise<Params> 
                   <p className="muted">Vocabulary and comprehension prompts are not available for this version yet.</p>
                 </section>
               ) : null}
-              {vocabulary.length > 0 ? (
+              {vocabularyWithDisplay.length > 0 ? (
               <section className="panel-card">
                 <h2>
                   <Languages size={18} color="var(--terracotta)" /> Key Vocabulary
                 </h2>
                 <div className="definition-list">
-                  {vocabulary.map((item) => (
+                  {vocabularyWithDisplay.map((item) => (
                     <div className="definition-item" key={`${item.term}-${item.meaning_en}`}>
-                      <strong>{item.term}</strong>
-                      {item.part_of_speech ? <span className="chip">{item.part_of_speech}</span> : null}
+                      <div className="vocabulary-heading">
+                        <strong>{item.term}</strong>
+                        <span className="chip vocabulary-part-of-speech">{item.partOfSpeech}</span>
+                      </div>
                       <p className="muted">{item.meaning_en}</p>
                     </div>
                   ))}

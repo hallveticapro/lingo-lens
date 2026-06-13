@@ -489,7 +489,7 @@ export async function generateAdaptations(
                 profile,
                 fact_bank: factData,
                 schema:
-                  "Return JSON with title, subtitle, summary, image_caption, body_markdown, body_blocks, vocabulary, comprehension_questions, content_warning, editor_notes, fact_preservation_notes. Translate image_caption when source_image_caption exists; otherwise return null."
+                  "Return JSON with title, subtitle, summary, image_caption, body_markdown, body_blocks, vocabulary, comprehension_questions, content_warning, editor_notes, fact_preservation_notes. Vocabulary entries must include term, meaning_en, and part_of_speech; for verbs, use the infinitive form as the term when the target language has one. Translate image_caption when source_image_caption exists; otherwise return null."
               })
             }
           ]

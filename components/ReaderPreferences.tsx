@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { X } from "lucide-react";
 
 const storageKey = "lingolens.readerComfort";
 
@@ -37,6 +38,17 @@ export function ReaderPreferences() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!enabled) return undefined;
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") onChange(false);
+    }
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [enabled]);
+
   function onChange(checked: boolean) {
     setEnabled(checked);
     writePreference(checked);
@@ -45,14 +57,23 @@ export function ReaderPreferences() {
 
   return (
     <section className="panel-card reader-preferences" aria-label="Reader preferences">
-      <h2>Reader Preferences</h2>
-      <label className="reader-toggle-row">
-        <span>Comfort mode</span>
-        <span className="reader-toggle">
-          <input type="checkbox" checked={enabled} onChange={(event) => onChange(event.currentTarget.checked)} />
-          <span aria-hidden="true" />
-        </span>
-      </label>
+      {enabled ? (
+        <button className="reader-comfort-exit" type="button" onClick={() => onChange(false)}>
+          <X size={16} aria-hidden="true" />
+          Exit Comfort Mode
+        </button>
+      ) : (
+        <>
+          <h2>Reader Preferences</h2>
+          <label className="reader-toggle-row">
+            <span>Comfort mode</span>
+            <span className="reader-toggle">
+              <input type="checkbox" checked={enabled} onChange={(event) => onChange(event.currentTarget.checked)} />
+              <span aria-hidden="true" />
+            </span>
+          </label>
+        </>
+      )}
     </section>
   );
 }

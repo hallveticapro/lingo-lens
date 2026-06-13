@@ -562,6 +562,46 @@ html.reader-comfort .reader-content {
   transition: none;
 }
 
+html.reader-comfort,
+html.reader-comfort body {
+  background: var(--surface-lowest);
+}
+
+html.reader-comfort .top-nav,
+html.reader-comfort .site-footer,
+html.reader-comfort .level-switcher,
+html.reader-comfort .meta-line,
+html.reader-comfort .reader-hero-image,
+html.reader-comfort .caption,
+html.reader-comfort .sidebar-stack > :not(.reader-preferences) {
+  display: none;
+}
+
+html.reader-comfort .reader-layout {
+  display: block;
+  width: min(100% - 40px, 760px);
+  padding: 72px 0 96px;
+}
+
+html.reader-comfort .reader-layout > article {
+  max-width: 72ch;
+  margin: 0 auto;
+}
+
+html.reader-comfort .article-title {
+  font-size: clamp(42px, 7vw, 68px);
+  line-height: 1.05;
+  margin-top: 0;
+  padding-bottom: 18px;
+}
+
+html.reader-comfort .dek {
+  font-family: var(--font-reader);
+  font-size: 23px;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
 html.reader-comfort .reader-body {
   font-size: 23px;
   line-height: 1.95;
@@ -607,6 +647,42 @@ html.reader-comfort .reader-body li {
 
 .reader-preferences {
   background: var(--surface-low);
+}
+
+html.reader-comfort .reader-preferences {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  z-index: 30;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.reader-comfort-exit {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  border: 1px solid rgba(5, 17, 37, 0.18);
+  border-radius: 8px;
+  padding: 0 14px;
+  background: var(--navy-deep);
+  color: white;
+  box-shadow: 0 6px 14px rgba(5, 17, 37, 0.12);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.reader-comfort-exit:hover {
+  background: var(--navy);
+}
+
+.reader-comfort-exit:focus-visible {
+  outline: 3px solid rgba(154, 68, 45, 0.26);
+  outline-offset: 3px;
 }
 
 .reader-toggle-row {
@@ -681,6 +757,19 @@ html.reader-comfort .reader-body li {
 .definition-item strong {
   font-family: var(--font-reader);
   font-size: 20px;
+}
+
+.vocabulary-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.vocabulary-part-of-speech {
+  color: var(--terracotta);
+  border-color: rgba(154, 68, 45, 0.24);
+  background: rgba(255, 219, 210, 0.48);
 }
 
 .admin-shell {

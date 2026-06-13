@@ -33,7 +33,6 @@ export function ArticleCard({ adaptation }: { adaptation: ArticleCardAdaptation 
       <div className="chip-row">
         <span className="chip">{publisher}</span>
         <span className="chip">{adaptation.targetLocale.displayNameEn}</span>
-        <span className="chip chip-active">{adaptation.readingLevel.displayName}</span>
       </div>
       <h3>
         <Link
