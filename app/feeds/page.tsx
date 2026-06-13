@@ -5,6 +5,7 @@ import { PublicShell } from "@/components/PublicChrome";
 import { appUrl } from "@/lib/env";
 import { prisma } from "@/lib/prisma";
 import { levelKeyToSlug } from "@/lib/level";
+import { localeTagToSlug } from "@/lib/locale";
 import { absoluteUrl } from "@/lib/rss";
 
 export const dynamic = "force-dynamic";
@@ -30,7 +31,7 @@ export default async function FeedsPage() {
           </p>
           <div className="feed-grid">
             {configs.map((config) => {
-              const href = `/feeds/${config.targetLocale.bcp47Tag}/${levelKeyToSlug(
+              const href = `/feeds/${localeTagToSlug(config.targetLocale.bcp47Tag)}/${levelKeyToSlug(
                 config.readingLevel.key
               )}.xml`;
               const fullUrl = absoluteUrl(baseUrl, href);

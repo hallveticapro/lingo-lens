@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
 import { GenerationError, classifyGenerationError, missingReadingLevelKeys } from "@/lib/generation";
+import { generatedSchema } from "@/lib/generation/payloads";
 
 describe("classifyGenerationError", () => {
   it("treats explicit generation validation errors as validation failures", () => {
@@ -23,5 +24,28 @@ describe("classifyGenerationError", () => {
 describe("missingReadingLevelKeys", () => {
   it("returns de-duplicated requested level keys that were not found", () => {
     expect(missingReadingLevelKeys(["beginner", "advanced", "advanced"], ["beginner"])).toEqual(["advanced"]);
+  });
+});
+
+describe("generated adaptation payload", () => {
+  it("accepts an English check translation for the generated level text", () => {
+    const parsed = generatedSchema.parse({
+      title: "Un texto simple",
+      body_markdown: "Este es un texto simple.",
+      check_translation: {
+        locale: "en-US",
+        title: "A simple text",
+        summary: "A short check translation.",
+        body_markdown: "This is a simple text."
+      },
+      body_blocks: ["Este es un texto simple."],
+      vocabulary: [],
+      comprehension_questions: [],
+      editor_notes: [],
+      fact_preservation_notes: []
+    });
+
+    expect(parsed.check_translation?.locale).toBe("en-US");
+    expect(parsed.check_translation?.body_markdown).toBe("This is a simple text.");
   });
 });

@@ -38,6 +38,9 @@ export const adaptationEditSchema = z.object({
   subtitle: z.string().trim().optional(),
   summary: z.string().trim().optional(),
   bodyMarkdown: z.string().trim().min(20),
+  checkTranslationTitle: z.string().trim().optional(),
+  checkTranslationSummary: z.string().trim().optional(),
+  checkTranslationBodyMarkdown: z.string().trim().optional(),
   vocabularyText: z.string().trim().optional(),
   questionsText: z.string().trim().optional(),
   editorNotes: z.string().trim().optional()

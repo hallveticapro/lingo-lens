@@ -1,46 +1,14 @@
 import { PrismaClient } from "@prisma/client";
 import { openAIModel } from "../lib/env";
+import {
+  generationConstraintsForLevel,
+  levelTargetsSummary,
+  readingLevelSeeds,
+  scaffoldConfigForLevel,
+  vocabularyConstraintsForLevel
+} from "../lib/level-guidance";
 
 const prisma = new PrismaClient();
-
-const levels = [
-  {
-    key: "super_beginner",
-    displayName: "Super Beginner",
-    shortDescription: "Very short, heavily scaffolded Spanish for first readings.",
-    sortOrder: 10,
-    cefr: "A0-A1-ish",
-    min: 120,
-    max: 220
-  },
-  {
-    key: "beginner",
-    displayName: "Beginner",
-    shortDescription: "Simple sentences and common vocabulary.",
-    sortOrder: 20,
-    cefr: "A1-A2-ish",
-    min: 250,
-    max: 500
-  },
-  {
-    key: "intermediate",
-    displayName: "Intermediate",
-    shortDescription: "More natural Spanish with fuller detail.",
-    sortOrder: 30,
-    cefr: "B1-B2-ish",
-    min: 500,
-    max: 850
-  },
-  {
-    key: "natural",
-    displayName: "Natural",
-    shortDescription: "A fluent, natural target-language version.",
-    sortOrder: 40,
-    cefr: "C1-C2-ish",
-    min: 700,
-    max: 1200
-  }
-];
 
 const sampleBody = `Families in Mexico and in Mexican communities around the world prepare colorful ofrendas for Día de Muertos. The celebration takes place on November 1 and 2. It is a time to remember loved ones who have died, not as a sad ending, but as a moment of welcome, memory, and care.
 
@@ -81,7 +49,7 @@ async function main() {
   });
 
   const levelRows = new Map<string, string>();
-  for (const level of levels) {
+  for (const level of readingLevelSeeds) {
     const row = await prisma.readingLevel.upsert({
       where: { key: level.key },
       update: {
@@ -109,36 +77,26 @@ async function main() {
           readingLevelId: row.id
         }
       },
-      update: {},
+      update: {
+        externalFrameworkMappings: { cefr_estimate: level.cefr },
+        generationConstraints: generationConstraintsForLevel(level.key),
+        vocabularyConstraints: vocabularyConstraintsForLevel(level.key),
+        scaffoldConfig: scaffoldConfigForLevel(level.key),
+        isGenerationEnabled: true,
+        isPublic: true
+      },
       create: {
         localeId: spanish.id,
         readingLevelId: row.id,
         externalFrameworkMappings: { cefr_estimate: level.cefr },
-        generationConstraints: {
-          target_word_count_min: level.min,
-          target_word_count_max: level.max,
-          sentence_style:
-            level.key === "natural"
-              ? "natural editorial Spanish"
-              : "short and direct, with controlled vocabulary",
-          avoid: ["vosotros", "Spain-specific idioms", "dense regional slang"],
-          locale_notes: "Use broadly neutral Latin American Spanish."
-        },
-        vocabularyConstraints: {
-          max_terms: level.key === "super_beginner" ? 6 : 10,
-          include_english_meanings: true,
-          include_example_sentences: true
-        },
-        scaffoldConfig: {
-          include_summary: true,
-          include_comprehension_questions: true,
-          question_count: level.key === "super_beginner" ? 3 : 4
-        }
+        generationConstraints: generationConstraintsForLevel(level.key),
+        vocabularyConstraints: vocabularyConstraintsForLevel(level.key),
+        scaffoldConfig: scaffoldConfigForLevel(level.key)
       }
     });
   }
 
-  for (const level of levels) {
+  for (const level of readingLevelSeeds) {
     await prisma.rssFeedConfig.upsert({
       where: {
         targetLocaleId_readingLevelId: {
@@ -146,11 +104,15 @@ async function main() {
           readingLevelId: levelRows.get(level.key)!
         }
       },
-      update: {},
+      update: {
+        slug: `latam-${level.key.replaceAll("_", "-")}`,
+        title: `LingoLens ${level.displayName} Spanish`,
+        description: `Published ${level.displayName.toLowerCase()} readings in Latin American Spanish.`
+      },
       create: {
         targetLocaleId: spanish.id,
         readingLevelId: levelRows.get(level.key)!,
-        slug: `es-419-${level.key.replaceAll("_", "-")}`,
+        slug: `latam-${level.key.replaceAll("_", "-")}`,
         title: `LingoLens ${level.displayName} Spanish`,
         description: `Published ${level.displayName.toLowerCase()} readings in Latin American Spanish.`
       }
@@ -226,25 +188,33 @@ async function main() {
   const sampleAdaptations = {
     super_beginner: {
       title: "Día de Muertos en familia",
-      summary: "Las familias recuerdan con flores, comida y velas.",
+      summary: "Una familia recuerda con amor.",
       bodyMarkdown:
-        "Día de Muertos es una celebración de México. Es el 1 y el 2 de noviembre.\n\nLas familias recuerdan a personas queridas. Preparan una mesa especial. Esta mesa se llama **ofrenda**.\n\nEn la ofrenda hay fotos, velas, comida y flores naranjas. Las flores se llaman **cempasúchil**.\n\nNo es solo un día triste. Es un día de memoria, amor y familia.",
+        "El Día de Muertos es una fiesta en México. Es el 1 y el 2 de noviembre.\n\nUna familia recuerda a personas que ama. La familia hace una mesa. La mesa se llama **ofrenda**.\n\nEn la mesa hay fotos, velas, pan y flores naranjas. Las flores se llaman **cempasúchil**.\n\nLa familia dice: te recordamos. Es un día de amor.",
+      checkTitle: "Día de Muertos with family",
+      checkSummary: "A family remembers with love.",
+      checkBodyMarkdown:
+        "Día de Muertos is a holiday in Mexico. It is on November 1 and 2.\n\nA family remembers people it loves. The family makes a table. The table is called an **ofrenda**.\n\nOn the table there are photos, candles, bread, and orange flowers. The flowers are called **cempasúchil**.\n\nThe family says: we remember you. It is a day of love.",
       vocabulary: [
         { term: "ofrenda", meaning_en: "offering or family altar", part_of_speech: "noun" },
-        { term: "velas", meaning_en: "candles", part_of_speech: "noun" },
         { term: "recordar", meaning_en: "to remember", part_of_speech: "verb" }
       ]
     },
     beginner: {
       title: "Tradiciones de Día de Muertos",
       summary:
-        "Una mirada a una celebración mexicana que honra a los seres queridos con altares, flores y pan de muerto.",
+        "Una celebración mexicana ayuda a las familias a recordar a personas queridas.",
       bodyMarkdown:
-        "El Día de Muertos es una celebración mexicana muy especial. Se celebra el 1 y 2 de noviembre. Durante estos días, las familias recuerdan a las personas que ya no están vivas.\n\nNo es un día solamente triste. Es un día de alegría, color y memoria. Muchas familias preparan una bienvenida especial en sus casas.\n\n## La ofrenda\n\nEl centro de la celebración es la ofrenda o altar. En el altar, las familias ponen fotos, comida, pan de muerto, velas y flores de cempasúchil.\n\nLas flores naranjas ayudan a crear un camino simbólico para los espíritus. Cada familia tiene detalles diferentes, pero la idea principal es la misma: recordar con amor.",
+        "El Día de Muertos es una celebración de México. Se celebra el 1 y 2 de noviembre. En estos días, muchas familias recuerdan a personas queridas que murieron.\n\nLas familias preparan una **ofrenda**. Una ofrenda es una mesa especial. Puede tener fotos, velas, pan de muerto, comida favorita y flores naranjas de cempasúchil.\n\nLa celebración no es solo triste. También habla de amor, memoria y familia. Cada familia prepara la ofrenda a su manera.",
+      checkTitle: "Día de Muertos traditions",
+      checkSummary:
+        "A Mexican celebration helps families remember loved ones.",
+      checkBodyMarkdown:
+        "Día de Muertos is a celebration from Mexico. It is celebrated on November 1 and 2. On these days, many families remember loved ones who died.\n\nFamilies prepare an **ofrenda**. An ofrenda is a special table. It can have photos, candles, pan de muerto, favorite food, and orange cempasúchil flowers.\n\nThe celebration is not only sad. It also speaks about love, memory, and family. Each family prepares the ofrenda in its own way.",
       vocabulary: [
-        { term: "alegría", meaning_en: "joy, happiness", part_of_speech: "noun" },
+        { term: "querido", meaning_en: "loved, dear", part_of_speech: "adjective" },
         { term: "recordar", meaning_en: "to remember", part_of_speech: "verb" },
-        { term: "alma", meaning_en: "soul", part_of_speech: "noun" }
+        { term: "ofrenda", meaning_en: "offering or family altar", part_of_speech: "noun" }
       ]
     },
     intermediate: {
@@ -253,6 +223,11 @@ async function main() {
         "El Día de Muertos combina duelo, hospitalidad y memoria familiar en una tradición profundamente visual.",
       bodyMarkdown:
         "En México y en muchas comunidades mexicanas del mundo, el Día de Muertos transforma la memoria en una práctica visible. La celebración, que ocurre el 1 y 2 de noviembre, invita a las familias a recibir simbólicamente a sus seres queridos fallecidos.\n\nLa ofrenda es el centro de esta bienvenida. Puede incluir fotografías, velas, pan de muerto, comidas favoritas y flores de cempasúchil. El color intenso y el aroma de estas flores se interpretan como una guía para que los espíritus encuentren el camino a casa.\n\nAunque la muerte está presente, el tono de la celebración no se reduce a la tristeza. La tradición expresa una idea más amplia: recordar también puede ser un acto generoso, cotidiano y lleno de vida.",
+      checkTitle: "How ofrendas keep memory alive",
+      checkSummary:
+        "Día de Muertos combines grief, hospitality, and family memory in a deeply visual tradition.",
+      checkBodyMarkdown:
+        "In Mexico and in many Mexican communities around the world, Día de Muertos turns memory into a visible practice. The celebration, which happens on November 1 and 2, invites families to symbolically welcome their deceased loved ones.\n\nThe ofrenda is the center of this welcome. It can include photographs, candles, pan de muerto, favorite foods, and cempasúchil flowers. The intense color and scent of these flowers are understood as a guide so spirits can find the way home.\n\nAlthough death is present, the tone of the celebration is not reduced to sadness. The tradition expresses a broader idea: remembering can also be a generous, everyday act full of life.",
       vocabulary: [
         { term: "fallecido", meaning_en: "deceased", part_of_speech: "adjective" },
         { term: "cotidiano", meaning_en: "everyday", part_of_speech: "adjective" },
@@ -265,6 +240,11 @@ async function main() {
         "Las ofrendas muestran cómo una tradición familiar convierte el recuerdo en hospitalidad.",
       bodyMarkdown:
         "En México, y en comunidades mexicanas de todo el mundo, el Día de Muertos convierte el recuerdo en una forma de hospitalidad. El 1 y 2 de noviembre, muchas familias preparan ofrendas para honrar a quienes han muerto y para recibirlos, simbólicamente, de vuelta en casa.\n\nLos altares suelen reunir fotografías, velas, pan de muerto, platillos favoritos y flores de cempasúchil. Según la tradición, el color y el aroma de esas flores ayudan a marcar el camino de regreso. Cada familia organiza la ofrenda a su manera, con objetos íntimos que cuentan una historia particular.\n\nPor eso la celebración no se entiende únicamente como un ritual de duelo. También es una afirmación de continuidad: los vínculos permanecen, la memoria se cuida y la ausencia encuentra un lugar en la vida familiar.",
+      checkTitle: "Día de Muertos: memory prepared at home",
+      checkSummary:
+        "Ofrendas show how a family tradition turns remembrance into hospitality.",
+      checkBodyMarkdown:
+        "In Mexico, and in Mexican communities around the world, Día de Muertos turns remembrance into a form of hospitality. On November 1 and 2, many families prepare ofrendas to honor those who have died and to receive them, symbolically, back home.\n\nThe altars often bring together photographs, candles, pan de muerto, favorite dishes, and cempasúchil flowers. According to tradition, the color and scent of those flowers help mark the path back. Each family organizes the ofrenda in its own way, with intimate objects that tell a particular story.\n\nThat is why the celebration is not understood only as a ritual of grief. It is also an affirmation of continuity: bonds remain, memory is cared for, and absence finds a place in family life.",
       vocabulary: [
         { term: "hospitalidad", meaning_en: "hospitality", part_of_speech: "noun" },
         { term: "duelo", meaning_en: "grief, mourning", part_of_speech: "noun" },
@@ -283,16 +263,17 @@ async function main() {
           readingLevelId: levelRows.get(key)!
         }
       },
-      update: { imageCaption },
-      create: {
-        contentItemId: content.id,
-        targetLocaleId: spanish.id,
-        readingLevelId: levelRows.get(key)!,
+      update: {
         status: "published",
         title: adaptation.title,
         summary: adaptation.summary,
         imageCaption,
         bodyMarkdown: adaptation.bodyMarkdown,
+        checkTranslationLocale: "en-US",
+        checkTranslationTitle: adaptation.checkTitle,
+        checkTranslationSummary: adaptation.checkSummary,
+        checkTranslationImageCaption: "A traditional altar uses candles and cempasúchil flowers to welcome memory.",
+        checkTranslationBodyMarkdown: adaptation.checkBodyMarkdown,
         bodyBlocks: adaptation.bodyMarkdown.split("\n\n").map((text) => ({ type: "paragraph", text })),
         vocabulary: adaptation.vocabulary,
         comprehensionQuestions: [
@@ -307,7 +288,45 @@ async function main() {
             difficulty: key
           }
         ],
-        estimatedReadingTimeSeconds: key === "super_beginner" ? 90 : 180,
+        estimatedReadingTimeSeconds: key === "super_beginner" ? 60 : key === "beginner" ? 100 : 180,
+        estimatedDifficulty: { label: key },
+        qaStatus: "passed",
+        qaReport: {
+          notes: ["Essential dates and cultural details preserved.", "Neutral Latin American Spanish."]
+        },
+        reviewedBy: "seed",
+        reviewedAt: new Date("2024-10-24T12:00:00.000Z"),
+        publishedAt: new Date("2024-10-24T12:00:00.000Z")
+      },
+      create: {
+        contentItemId: content.id,
+        targetLocaleId: spanish.id,
+        readingLevelId: levelRows.get(key)!,
+        status: "published",
+        title: adaptation.title,
+        summary: adaptation.summary,
+        imageCaption,
+        bodyMarkdown: adaptation.bodyMarkdown,
+        checkTranslationLocale: "en-US",
+        checkTranslationTitle: adaptation.checkTitle,
+        checkTranslationSummary: adaptation.checkSummary,
+        checkTranslationImageCaption: "A traditional altar uses candles and cempasúchil flowers to welcome memory.",
+        checkTranslationBodyMarkdown: adaptation.checkBodyMarkdown,
+        bodyBlocks: adaptation.bodyMarkdown.split("\n\n").map((text) => ({ type: "paragraph", text })),
+        vocabulary: adaptation.vocabulary,
+        comprehensionQuestions: [
+          {
+            question: "¿Qué prepara la familia?",
+            answer: "Prepara una ofrenda con fotos, velas, comida y flores.",
+            difficulty: key
+          },
+          {
+            question: "¿Cuándo se celebra el Día de Muertos?",
+            answer: "Se celebra el 1 y 2 de noviembre.",
+            difficulty: key
+          }
+        ],
+        estimatedReadingTimeSeconds: key === "super_beginner" ? 60 : key === "beginner" ? 100 : 180,
         estimatedDifficulty: { label: key },
         qaStatus: "passed",
         qaReport: {
@@ -334,15 +353,23 @@ async function main() {
   });
 
   await prisma.promptTemplate.upsert({
-    where: { key_version: { key: "generate_adaptation", version: "v1" } },
-    update: {},
-    create: {
-      key: "generate_adaptation",
-      version: "v1",
+    where: { key_version: { key: "generate_adaptation", version: "v3" } },
+    update: {
       modelDefault: openAIModel(),
       systemInstructions:
-        "Act as a language-learning editor. Use the target locale exactly, preserve protected facts, and return valid JSON.",
-      userTemplate: "Create a {{level}} adaptation for {{locale}} using the source and fact bank.",
+        `Act as a language-learning editor. Use the target locale exactly, preserve protected facts, follow these strict level targets, and provide an English check translation of the generated adaptation: ${levelTargetsSummary()}`,
+      userTemplate:
+        "Create a {{level}} adaptation for {{locale}} using the source, fact bank, and level guidance. Then translate that generated adaptation into English for check_translation.",
+      outputSchema: { type: "object" }
+    },
+    create: {
+      key: "generate_adaptation",
+      version: "v3",
+      modelDefault: openAIModel(),
+      systemInstructions:
+        `Act as a language-learning editor. Use the target locale exactly, preserve protected facts, follow these strict level targets, and provide an English check translation of the generated adaptation: ${levelTargetsSummary()}`,
+      userTemplate:
+        "Create a {{level}} adaptation for {{locale}} using the source, fact bank, and level guidance. Then translate that generated adaptation into English for check_translation.",
       outputSchema: { type: "object" }
     }
   });

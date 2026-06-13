@@ -1,19 +1,27 @@
 import { prisma } from "@/lib/prisma";
 import { levelSlugToKey } from "@/lib/level";
+import { canonicalLocaleSlug, isCanonicalLocaleSlug, localeSlugToTag } from "@/lib/locale";
 import { appUrl as configuredAppUrl, rssMaxItems } from "@/lib/env";
 import { absoluteUrl, publicReadingUrl, rssChannelImage, rssGuid, rssImageTags, xmlEscape } from "@/lib/rss";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(_request: Request, { params }: { params: Promise<{ locale: string; level: string }> }) {
+export async function GET(request: Request, { params }: { params: Promise<{ locale: string; level: string }> }) {
   const { locale, level } = await params;
-  const levelKey = levelSlugToKey(level.replace(/\.xml$/, ""));
+  const levelSlug = level.replace(/\.xml$/, "");
+  if (!isCanonicalLocaleSlug(locale)) {
+    const url = new URL(request.url);
+    url.pathname = `/feeds/${canonicalLocaleSlug(locale)}/${levelSlug}.xml`;
+    return Response.redirect(url, 308);
+  }
+  const localeTag = localeSlugToTag(locale);
+  const levelKey = levelSlugToKey(levelSlug);
   const appUrl = configuredAppUrl();
 
   const config = await prisma.rssFeedConfig.findFirst({
     where: {
       isEnabled: true,
-      targetLocale: { bcp47Tag: locale },
+      targetLocale: { bcp47Tag: localeTag },
       readingLevel: { key: levelKey }
     },
     include: { targetLocale: true, readingLevel: true }

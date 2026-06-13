@@ -1,4 +1,5 @@
 import { levelKeyToSlug } from "@/lib/level";
+import { localeTagToSlug } from "@/lib/locale";
 
 export function xmlEscape(value: string) {
   return value
@@ -10,7 +11,7 @@ export function xmlEscape(value: string) {
 }
 
 export function publicReadingUrl(appUrl: string, locale: string, levelKey: string, slug: string) {
-  return `${appUrl}/read/${locale}/${levelKeyToSlug(levelKey)}/${slug}`;
+  return `${appUrl}/read/${localeTagToSlug(locale)}/${levelKeyToSlug(levelKey)}/${slug}`;
 }
 
 export function rssGuid(contentId: string, locale: string, levelKey: string) {

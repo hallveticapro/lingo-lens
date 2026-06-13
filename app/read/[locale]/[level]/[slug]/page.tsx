@@ -1,14 +1,14 @@
 import Link from "next/link";
-import Image from "next/image";
-import { notFound } from "next/navigation";
-import { BookOpen, Languages, Rss } from "lucide-react";
+import { notFound, permanentRedirect } from "next/navigation";
+import { Languages, Rss } from "lucide-react";
 import { DocumentLanguage } from "@/components/DocumentLanguage";
-import { Markdown } from "@/components/Markdown";
 import { PublicShell } from "@/components/PublicChrome";
 import { ReadingLevelSwitcher } from "@/components/ReadingLevelSwitcher";
 import { ReaderPreferences } from "@/components/ReaderPreferences";
+import { ReaderTranslationView } from "@/components/ReaderTranslationView";
 import { prisma } from "@/lib/prisma";
 import { levelKeyToSlug, levelSlugToKey } from "@/lib/level";
+import { canonicalLocaleSlug, isCanonicalLocaleSlug, localeSlugToTag, localeTagToSlug } from "@/lib/locale";
 import { shouldBypassImageOptimization } from "@/lib/media-urls";
 import type { QuestionItem, VocabularyItem } from "@/lib/parsers";
 
@@ -27,13 +27,21 @@ function vocabularyPartOfSpeech(item: VocabularyItem) {
   return "part of speech pending";
 }
 
+function shortLanguageLabel(displayName: string) {
+  return displayName.replace(/\s*\([^)]*\)/g, "").trim() || displayName;
+}
+
 export default async function ReadingPage({ params }: { params: Promise<Params> }) {
   const { locale, level, slug } = await params;
+  if (!isCanonicalLocaleSlug(locale)) {
+    permanentRedirect(`/read/${canonicalLocaleSlug(locale)}/${level}/${slug}`);
+  }
+  const localeTag = localeSlugToTag(locale);
   const levelKey = levelSlugToKey(level);
   const adaptation = await prisma.adaptation.findFirst({
     where: {
       status: "published",
-      targetLocale: { bcp47Tag: locale, isPublic: true },
+      targetLocale: { bcp47Tag: localeTag, isPublic: true },
       readingLevel: { key: levelKey, isPublic: true },
       contentItem: { slug }
     },
@@ -70,47 +78,55 @@ export default async function ReadingPage({ params }: { params: Promise<Params> 
     id: item.id,
     label: item.readingLevel.displayName,
     isCurrent: item.readingLevel.key === adaptation.readingLevel.key,
-    href: `/read/${adaptation.targetLocale.bcp47Tag}/${levelKeyToSlug(
+    href: `/read/${localeTagToSlug(adaptation.targetLocale.bcp47Tag)}/${levelKeyToSlug(
       item.readingLevel.key
     )}/${adaptation.contentItem.slug}`
   }));
   const headerMedia = adaptation.contentItem.headerMediaAsset;
   const imageCaption = adaptation.imageCaption ?? headerMedia?.caption;
   const imageUrl = headerMedia?.publicUrl;
+  const checkTranslationBody = adaptation.checkTranslationBodyMarkdown?.trim();
+  const englishCheckTranslation = checkTranslationBody
+    ? {
+        locale: adaptation.checkTranslationLocale ?? "en-US",
+        dir: "ltr" as const,
+        label: "English",
+        title: adaptation.checkTranslationTitle ?? adaptation.contentItem.sourceTitle,
+        summary: adaptation.checkTranslationSummary,
+        imageCaption: adaptation.checkTranslationImageCaption,
+        bodyMarkdown: checkTranslationBody
+      }
+    : null;
 
   return (
     <PublicShell>
       <DocumentLanguage lang={adaptation.targetLocale.bcp47Tag} dir={adaptation.targetLocale.direction} />
       <div className="container reader-layout reader-content">
-        <article lang={adaptation.targetLocale.bcp47Tag} dir={adaptation.targetLocale.direction}>
-              <ReadingLevelSwitcher levels={levelLinks} />
-              <h1 className="article-title">{adaptation.title}</h1>
-              {adaptation.summary ? <p className="dek">{adaptation.summary}</p> : null}
-              <div className="meta-line">
-                <span className="meta-pill">
-                  <BookOpen size={14} /> Source: {adaptation.contentItem.sourceName ?? "LingoLens"}
-                </span>
-                <span className="meta-pill">Updated {adaptation.updatedAt.toLocaleDateString()}</span>
-              </div>
-
-              {imageUrl ? (
-                <>
-                  <Image
-                    className="reader-hero-image"
-                    src={imageUrl}
-                    alt={headerMedia.altText ?? ""}
-                    width={1200}
-                    height={770}
-                    sizes="(max-width: 900px) 100vw, 720px"
-                    unoptimized={shouldBypassImageOptimization(imageUrl)}
-                  />
-                  {imageCaption ? (
-                    <p className="caption">{imageCaption}</p>
-                  ) : null}
-                </>
-              ) : null}
-
-              <Markdown className="reader-body">{adaptation.bodyMarkdown}</Markdown>
+        <article>
+          <ReadingLevelSwitcher levels={levelLinks} />
+          <ReaderTranslationView
+            target={{
+              locale: adaptation.targetLocale.bcp47Tag,
+              dir: adaptation.targetLocale.direction,
+              label: shortLanguageLabel(adaptation.targetLocale.displayNameEn),
+              title: adaptation.title,
+              summary: adaptation.summary,
+              imageCaption,
+              bodyMarkdown: adaptation.bodyMarkdown
+            }}
+            english={englishCheckTranslation}
+            image={
+              imageUrl
+                ? {
+                    url: imageUrl,
+                    altText: headerMedia.altText ?? "",
+                    unoptimized: shouldBypassImageOptimization(imageUrl)
+                  }
+                : null
+            }
+            sourceLabel={adaptation.contentItem.sourceName ?? "LingoLens"}
+            updatedLabel={adaptation.updatedAt.toLocaleDateString()}
+          />
         </article>
 
         <aside className="sidebar-stack" aria-label="Reading tools">
@@ -168,7 +184,7 @@ export default async function ReadingPage({ params }: { params: Promise<Params> 
                     borderColor: "var(--terracotta)",
                     color: "white"
                   }}
-                  href={`/feeds/${adaptation.targetLocale.bcp47Tag}/${levelKeyToSlug(
+                  href={`/feeds/${localeTagToSlug(adaptation.targetLocale.bcp47Tag)}/${levelKeyToSlug(
                     adaptation.readingLevel.key
                   )}.xml`}
                 >

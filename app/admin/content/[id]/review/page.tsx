@@ -131,6 +131,39 @@ export default async function ReviewPage({
                   </p>
                 ) : null}
               </div>
+              <div
+                className="field"
+                style={{ marginTop: 34, borderTop: "1px solid var(--surface-highest)", paddingTop: 30 }}
+              >
+                <h2 className="section-title" style={{ fontSize: 28 }}>
+                  English Check Translation
+                </h2>
+                <label htmlFor="checkTranslationTitle">English Title</label>
+                <input
+                  className="input"
+                  id="checkTranslationTitle"
+                  name="checkTranslationTitle"
+                  defaultValue={selected.checkTranslationTitle ?? ""}
+                />
+              </div>
+              <div className="field" style={{ marginTop: 18 }}>
+                <label htmlFor="checkTranslationSummary">English Summary</label>
+                <textarea
+                  className="textarea"
+                  id="checkTranslationSummary"
+                  name="checkTranslationSummary"
+                  defaultValue={selected.checkTranslationSummary ?? ""}
+                />
+              </div>
+              <div className="field" style={{ marginTop: 18 }}>
+                <label htmlFor="checkTranslationBodyMarkdown">English Body</label>
+                <textarea
+                  className="textarea source-textarea"
+                  id="checkTranslationBodyMarkdown"
+                  name="checkTranslationBodyMarkdown"
+                  defaultValue={selected.checkTranslationBodyMarkdown ?? ""}
+                />
+              </div>
               <div className="field" style={{ marginTop: 34, borderTop: "1px solid var(--surface-highest)", paddingTop: 30 }}>
                 <h2 className="section-title" style={{ fontSize: 28 }}>
                   Vocabulary List

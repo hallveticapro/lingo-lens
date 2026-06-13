@@ -12,6 +12,7 @@ import {
   type FactBankPayload,
   type GeneratedPayload
 } from "@/lib/generation/payloads";
+import { guidanceForLevel, levelTargetsSummary } from "@/lib/level-guidance";
 import { optimizeHeaderImageForContent } from "@/lib/media";
 import { prisma } from "@/lib/prisma";
 
@@ -21,6 +22,8 @@ export {
   missingReadingLevelKeys,
   type GenerationFailureCategory
 } from "@/lib/generation/payloads";
+
+const ADAPTATION_PROMPT_VERSION = "v3";
 
 function configuredApiKey() {
   return openAIApiKey();
@@ -88,22 +91,41 @@ function mockAdaptation(levelKey: string, sourceTitle: string, factBank: FactBan
 
   const bodies: Record<string, string> = {
     super_beginner:
-      `# ${sourceTitle}\n\nEste texto habla de una idea importante. La versión es corta y clara.\n\nLa información principal es fácil de seguir. Las personas, los lugares y las fechas importantes se conservan.\n\nLa meta es leer con calma y entender la idea central.`,
+      `# ${sourceTitle}\n\nEste texto es muy corto.\n\nHabla de una idea importante: ${factBank.facts[0] ?? "algo pasa en el texto"}.\n\nLa lectura usa palabras simples. Es para entender la idea principal.`,
     beginner:
-      `# ${sourceTitle}\n\nEste texto presenta un tema real en español claro. La adaptación usa oraciones directas y vocabulario común.\n\nLa idea principal se mantiene: ${factBank.facts[0] ?? "el texto conserva los datos importantes"}.\n\nTambién se cuidan los nombres, las fechas y los números para no cambiar el significado original.`,
+      `# ${sourceTitle}\n\nEste texto presenta un tema real con español simple.\n\nLa idea principal es esta: ${factBank.facts[0] ?? "el texto conserva los datos importantes"}.\n\nLa adaptación usa frases cortas y vocabulario común. También conserva nombres, fechas y números importantes.`,
     intermediate:
-      `# ${sourceTitle}\n\nEsta versión adapta el texto original con un español más natural, pero todavía controlado para estudiantes de nivel intermedio.\n\nLa información central se organiza en párrafos claros. Un detalle importante es: ${factBank.facts[0] ?? "la adaptación conserva los hechos protegidos"}.\n\nEl objetivo es practicar lectura real sin perder precisión ni contexto.`,
+      `# ${sourceTitle}\n\nEsta versión adapta el texto original con un español claro para estudiantes intermedios.\n\nLa información central se organiza en párrafos breves, pero conserva más contexto que los niveles iniciales. Un detalle importante es: ${factBank.facts[0] ?? "la adaptación conserva los hechos protegidos"}.\n\nEl objetivo es practicar lectura real sin perder precisión ni contexto.`,
     natural:
-      `# ${sourceTitle}\n\nEsta adaptación ofrece una versión natural en español latinoamericano, con un tono editorial fluido y fiel al contenido de origen.\n\nEl texto mantiene los datos protegidos del banco de hechos y evita añadir información no sustentada. El resultado busca sonar auténtico sin dejar de ser útil para estudiantes avanzados.\n\nLa lectura conserva la intención, el ritmo y las relaciones principales del texto fuente.`
+      `# ${sourceTitle}\n\nEsta versión traduce el texto fuente en español latinoamericano natural, con un tono editorial fluido y fiel al contenido de origen.\n\nEl texto mantiene los datos protegidos del banco de hechos y evita añadir información no sustentada. El resultado busca sonar como una traducción estándar, no como un resumen simplificado.\n\nLa lectura conserva la intención, el ritmo y las relaciones principales del texto fuente.`
   };
+  const checkTranslations: Record<string, string> = {
+    super_beginner:
+      `# ${sourceTitle}\n\nThis text is very short.\n\nIt talks about one important idea: ${factBank.facts[0] ?? "something happens in the text"}.\n\nThe reading uses simple words. It is for understanding the main idea.`,
+    beginner:
+      `# ${sourceTitle}\n\nThis text presents a real topic in simple Spanish.\n\nThe main idea is this: ${factBank.facts[0] ?? "the text keeps the important details"}.\n\nThe adaptation uses short sentences and common vocabulary. It also keeps important names, dates, and numbers.`,
+    intermediate:
+      `# ${sourceTitle}\n\nThis version adapts the original text in clear Spanish for intermediate students.\n\nThe central information is organized in short paragraphs, but it keeps more context than the early levels. One important detail is: ${factBank.facts[0] ?? "the adaptation preserves the protected facts"}.\n\nThe goal is to practice real reading without losing accuracy or context.`,
+    natural:
+      `# ${sourceTitle}\n\nThis version translates the source text into natural Latin American Spanish with a fluent editorial tone that stays faithful to the original content.\n\nThe text keeps the protected facts from the fact bank and avoids adding unsupported information. The result is meant to sound like a standard translation, not a simplified summary.\n\nThe reading preserves the source text's intent, rhythm, and main relationships.`
+  };
+  const bodyMarkdown = bodies[levelKey] ?? bodies.beginner;
 
   return {
     title: `${sourceTitle} (${label})`,
     subtitle: null,
     summary: `Adaptación ${label.toLowerCase()} en español latinoamericano.`,
     image_caption: null,
-    body_markdown: bodies[levelKey] ?? bodies.beginner,
-    body_blocks: [{ type: "paragraph", text: bodies[levelKey] ?? bodies.beginner }],
+    body_markdown: bodyMarkdown,
+    check_translation: {
+      locale: "en-US",
+      title: `${sourceTitle} (${label})`,
+      subtitle: null,
+      summary: `${label} adaptation in English for checking comprehension.`,
+      image_caption: null,
+      body_markdown: checkTranslations[levelKey] ?? checkTranslations.beginner
+    },
+    body_blocks: [{ type: "paragraph", text: bodyMarkdown }],
     vocabulary: [
       {
         term: "idea principal",
@@ -295,7 +317,7 @@ export async function queueGenerationJob(
         requestedReadingLevelIds: resolved.levels.map((level) => level.id),
         provider: configuredApiKey() ? "openai" : "mock",
         model: modelName(),
-        promptVersion: "v1",
+        promptVersion: ADAPTATION_PROMPT_VERSION,
         requestPayload: {
           targetLocaleTag,
           levelKeys: resolved.levelKeys
@@ -327,7 +349,7 @@ export async function queueRegenerationJob(adaptationId: string, requestedBy?: s
         requestedReadingLevelIds: [adaptation.readingLevelId],
         provider: configuredApiKey() ? "openai" : "mock",
         model: modelName(),
-        promptVersion: "v1",
+        promptVersion: ADAPTATION_PROMPT_VERSION,
         requestPayload: {
           adaptationId,
           targetLocaleTag: adaptation.targetLocale.bcp47Tag,
@@ -411,7 +433,7 @@ export async function generateAdaptations(
           requestedReadingLevelIds: levels.map((level) => level.id),
           provider: configuredApiKey() ? "openai" : "mock",
           model: modelName(),
-          promptVersion: "v1",
+          promptVersion: ADAPTATION_PROMPT_VERSION,
           requestPayload: { targetLocaleTag, levelKeys: requestedLevelKeys },
           errorCategory: null,
           errorMessage: null,
@@ -428,7 +450,7 @@ export async function generateAdaptations(
           requestedReadingLevelIds: levels.map((level) => level.id),
           provider: configuredApiKey() ? "openai" : "mock",
           model: modelName(),
-          promptVersion: "v1",
+          promptVersion: ADAPTATION_PROMPT_VERSION,
           requestPayload: { targetLocaleTag, levelKeys: requestedLevelKeys },
           attempts: 1,
           startedAt: new Date()
@@ -467,6 +489,7 @@ export async function generateAdaptations(
       }
 
       let parsed = mockAdaptation(level.key, content.sourceTitle, factData);
+      const levelGuidance = guidanceForLevel(level.key);
 
       if (client) {
         const completion = await client.chat.completions.create({
@@ -476,7 +499,7 @@ export async function generateAdaptations(
             {
               role: "system",
               content:
-                "Act as a language-learning editor. Use neutral Latin American Spanish for es-419, preserve facts, avoid invented details, and return only JSON matching the requested schema."
+                `Act as a language-learning editor. Use the target locale exactly. For es-419, use neutral Latin American Spanish. Preserve protected facts, avoid invented details, and return only JSON matching the requested schema. Level targets are strict: ${levelTargetsSummary()}`
             },
             {
               role: "user",
@@ -487,9 +510,12 @@ export async function generateAdaptations(
                 target_locale: targetLocaleTag,
                 reading_level: level.key,
                 profile,
+                level_guidance: levelGuidance,
                 fact_bank: factData,
+                check_translation_instructions:
+                  "After producing the target-language adaptation, translate that generated leveled adaptation into English for learner self-checking. The English check translation must match the generated title, summary, body_markdown, and image_caption, including any simplifications or omitted details. Do not translate directly from the source article for this field.",
                 schema:
-                  "Return JSON with title, subtitle, summary, image_caption, body_markdown, body_blocks, vocabulary, comprehension_questions, content_warning, editor_notes, fact_preservation_notes. Vocabulary entries must include term, meaning_en, and part_of_speech; for verbs, use the infinitive form as the term when the target language has one. Translate image_caption when source_image_caption exists; otherwise return null."
+                  "Return JSON with title, subtitle, summary, image_caption, body_markdown, check_translation, body_blocks, vocabulary, comprehension_questions, content_warning, editor_notes, fact_preservation_notes. check_translation must include locale: \"en-US\", title, subtitle, summary, image_caption, and body_markdown translated from the generated target-language adaptation, not directly from the source. Vocabulary entries must include term, meaning_en, and part_of_speech; for verbs, use the infinitive form as the term when the target language has one. Translate image_caption when source_image_caption exists; otherwise return null."
               })
             }
           ]
@@ -512,6 +538,12 @@ export async function generateAdaptations(
           summary: parsed.summary,
           imageCaption: parsed.image_caption ?? content.headerMediaAsset?.caption ?? null,
           bodyMarkdown: parsed.body_markdown,
+          checkTranslationLocale: parsed.check_translation?.locale ?? "en-US",
+          checkTranslationTitle: parsed.check_translation?.title ?? null,
+          checkTranslationSubtitle: parsed.check_translation?.subtitle ?? null,
+          checkTranslationSummary: parsed.check_translation?.summary ?? null,
+          checkTranslationImageCaption: parsed.check_translation?.image_caption ?? null,
+          checkTranslationBodyMarkdown: parsed.check_translation?.body_markdown ?? null,
           bodyBlocks: parsed.body_blocks as Prisma.InputJsonValue,
           vocabulary: parsed.vocabulary as Prisma.InputJsonValue,
           comprehensionQuestions: parsed.comprehension_questions as Prisma.InputJsonValue,
@@ -536,6 +568,12 @@ export async function generateAdaptations(
           summary: parsed.summary,
           imageCaption: parsed.image_caption ?? content.headerMediaAsset?.caption ?? null,
           bodyMarkdown: parsed.body_markdown,
+          checkTranslationLocale: parsed.check_translation?.locale ?? "en-US",
+          checkTranslationTitle: parsed.check_translation?.title ?? null,
+          checkTranslationSubtitle: parsed.check_translation?.subtitle ?? null,
+          checkTranslationSummary: parsed.check_translation?.summary ?? null,
+          checkTranslationImageCaption: parsed.check_translation?.image_caption ?? null,
+          checkTranslationBodyMarkdown: parsed.check_translation?.body_markdown ?? null,
           bodyBlocks: parsed.body_blocks as Prisma.InputJsonValue,
           vocabulary: parsed.vocabulary as Prisma.InputJsonValue,
           comprehensionQuestions: parsed.comprehension_questions as Prisma.InputJsonValue,
@@ -559,6 +597,12 @@ export async function generateAdaptations(
           summary: created.summary,
           imageCaption: created.imageCaption,
           bodyMarkdown: created.bodyMarkdown,
+          checkTranslationLocale: created.checkTranslationLocale,
+          checkTranslationTitle: created.checkTranslationTitle,
+          checkTranslationSubtitle: created.checkTranslationSubtitle,
+          checkTranslationSummary: created.checkTranslationSummary,
+          checkTranslationImageCaption: created.checkTranslationImageCaption,
+          checkTranslationBodyMarkdown: created.checkTranslationBodyMarkdown,
           bodyBlocks: created.bodyBlocks as Prisma.InputJsonValue,
           vocabulary: created.vocabulary as Prisma.InputJsonValue,
           comprehensionQuestions: created.comprehensionQuestions as Prisma.InputJsonValue,

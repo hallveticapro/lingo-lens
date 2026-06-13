@@ -151,10 +151,10 @@ The app should use internal reading-level keys, not only CEFR levels. CEFR is us
 
 | Internal Key | Display Label | Spanish MVP Mapping | Description |
 |---|---|---:|---|
-| `super_beginner` | Super Beginner | A0-A1-ish | Very short, heavily adapted, highly scaffolded |
-| `beginner` | Beginner | A1-A2-ish | Simple sentences and common vocabulary |
-| `intermediate` | Intermediate | B1-B2-ish | More natural, more complete detail |
-| `natural` | Natural | C1-C2-ish / fluent | Natural target-language version |
+| `super_beginner` | Super Beginner | A0-A1-ish | Kindergarten/1st grade, ELI5 mini-summary; very short and heavily adapted |
+| `beginner` | Beginner | A1-ish | 3rd grade, ELI10 summary-adaptation with simple sentences |
+| `intermediate` | Intermediate | A2-B1-ish | ELI15 adaptation with more context and teen-friendly clarity |
+| `natural` | Natural | Fluent / natural | Standard target-language translation, not a leveled simplification |
 
 Use `natural` internally instead of `native`. “Native” is not a stable proficiency level and can become awkward across languages. The product can always display a friendlier label later.
 
@@ -197,6 +197,7 @@ target_locale_id
 reading_level_id
 title
 body_markdown
+check_translation_body_markdown
 ```
 
 ### 7.3 Locale Metadata
@@ -232,7 +233,8 @@ Readers can:
 3. Filter or browse by reading level.
 4. Open a published reading.
 5. Switch levels for the same source item.
-6. Access a language-level RSS feed.
+6. Switch the visible reading between the target language and an English check translation for that same leveled text.
+7. Access a language-level RSS feed.
 
 Article pages display:
 
@@ -247,6 +249,7 @@ Article pages display:
 - App publication date.
 - Last updated date.
 - Body text.
+- English check translation for the same leveled body text, when available.
 - Vocabulary list, if generated.
 - Comprehension questions, if generated.
 - Content warning, if applicable.
@@ -256,10 +259,10 @@ Article pages display:
 Use locale and level in public URLs from day one.
 
 ```text
-/read/es-419/super-beginner/:slug
-/read/es-419/beginner/:slug
-/read/es-419/intermediate/:slug
-/read/es-419/natural/:slug
+/read/latam/super-beginner/:slug
+/read/latam/beginner/:slug
+/read/latam/intermediate/:slug
+/read/latam/natural/:slug
 ```
 
 Future examples:
@@ -366,10 +369,11 @@ Generated content should be stored in the database and served from the database.
 5. Backend creates a generation job.
 6. Backend extracts a fact bank from the source content.
 7. Backend generates one adaptation per selected target locale and reading level.
-8. Backend runs a QA pass for each adaptation.
-9. Adaptations are stored as `needs_review`.
-10. Admin reviews and edits.
-11. Admin publishes.
+8. Backend translates each generated leveled adaptation into English for learner self-checking.
+9. Backend runs a QA pass for each adaptation.
+10. Adaptations are stored as `needs_review`.
+11. Admin reviews and edits.
+12. Admin publishes.
 
 ### Important Generation Principle
 
@@ -391,6 +395,14 @@ Original + fact bank -> Natural
 ```
 
 This reduces telephone-game drift.
+
+The English check translation is the one intentional cascade:
+
+```text
+Generated leveled adaptation -> English check translation
+```
+
+Do not create the English check translation directly from the original source, because readers need it to reflect exactly what the leveled target-language text says.
 
 ### Fact Bank Requirements
 
@@ -418,6 +430,7 @@ For each adaptation, check:
 - Names, dates, numbers, and places unchanged unless intentionally adapted.
 - Correct target locale.
 - Correct reading level.
+- English check translation matches the generated leveled adaptation, not the original source.
 - No unwanted dialect contamination.
 - Direct quotes handled safely.
 - Sensitive content flagged.
@@ -432,10 +445,10 @@ Provide RSS feeds per target locale and reading level.
 MVP feed URLs:
 
 ```text
-/feeds/es-419/super-beginner.xml
-/feeds/es-419/beginner.xml
-/feeds/es-419/intermediate.xml
-/feeds/es-419/natural.xml
+/feeds/latam/super-beginner.xml
+/feeds/latam/beginner.xml
+/feeds/latam/intermediate.xml
+/feeds/latam/natural.xml
 ```
 
 Each RSS item represents one adaptation, not just one source content item.
@@ -567,25 +580,26 @@ Example Spanish beginner profile:
 ```json
 {
   "external_framework_mappings": {
-    "cefr_estimate": "A1-A2"
+    "cefr_estimate": "A1-ish"
   },
   "generation_constraints": {
-    "target_word_count_min": 250,
-    "target_word_count_max": 500,
+    "target_word_count_min": 140,
+    "target_word_count_max": 260,
+    "readability_target": "3rd grade / ELI10",
+    "adaptation_goal": "Write a simple summary-adaptation.",
     "sentence_style": "short and direct",
-    "allowed_tenses": ["present", "preterite", "near_future"],
     "avoid": ["vosotros", "regional slang", "dense idioms"],
     "locale_notes": "Use broadly neutral Latin American Spanish."
   },
   "vocabulary_constraints": {
-    "max_terms": 8,
+    "max_terms": 6,
     "include_english_meanings": true,
     "include_example_sentences": true
   },
   "scaffold_config": {
     "include_summary": true,
     "include_comprehension_questions": true,
-    "question_count": 4
+    "question_count": 3
   }
 }
 ```
@@ -731,6 +745,12 @@ Required fields:
 - `subtitle`, nullable
 - `summary`, nullable
 - `body_markdown`
+- `check_translation_locale`, nullable, default `en-US`
+- `check_translation_title`, nullable
+- `check_translation_subtitle`, nullable
+- `check_translation_summary`, nullable
+- `check_translation_image_caption`, nullable
+- `check_translation_body_markdown`, nullable
 - `body_blocks`, JSONB
 - `vocabulary`, JSONB
 - `comprehension_questions`, JSONB
@@ -860,6 +880,12 @@ Required fields:
 - `subtitle`, nullable
 - `summary`, nullable
 - `body_markdown`
+- `check_translation_locale`, nullable
+- `check_translation_title`, nullable
+- `check_translation_subtitle`, nullable
+- `check_translation_summary`, nullable
+- `check_translation_image_caption`, nullable
+- `check_translation_body_markdown`, nullable
 - `body_blocks`, JSONB
 - `vocabulary`, JSONB
 - `comprehension_questions`, JSONB
@@ -948,7 +974,7 @@ GET /feeds/:locale/:level.xml
 Example:
 
 ```http
-GET /feeds/es-419/beginner.xml
+GET /feeds/latam/beginner.xml
 ```
 
 ---
@@ -1106,7 +1132,16 @@ The model should return valid JSON matching this shape for each adaptation:
   "title": "string",
   "subtitle": "string or null",
   "summary": "string or null",
+  "image_caption": "string or null",
   "body_markdown": "string",
+  "check_translation": {
+    "locale": "en-US",
+    "title": "string or null",
+    "subtitle": "string or null",
+    "summary": "string or null",
+    "image_caption": "string or null",
+    "body_markdown": "string"
+  },
   "body_blocks": [
     {
       "type": "paragraph",
@@ -1157,6 +1192,7 @@ The generation prompt must instruct the model to:
 - Avoid inventing details.
 - Simplify without changing meaning.
 - Produce level-appropriate output.
+- Produce an English check translation from the generated leveled adaptation.
 - Return only JSON matching the schema.
 
 ## 13.2 Spanish MVP Rules
@@ -1169,6 +1205,10 @@ For `es-419`:
 - Avoid overly regional slang unless the source requires it.
 - Keep names, dates, places, and numbers consistent.
 - For Super Beginner, create an adapted mini-version, not a full translation.
+- Super Beginner should read like a Kindergarten/1st grade ELI5 explanation of the article.
+- Beginner should read like a 3rd grade / ELI10 explanation.
+- Intermediate should read like an ELI15 explanation with more context and natural structure.
+- Natural should be a standard translation of the source, not a summary or simplification.
 - For lower levels, paraphrase direct quotes unless exact quote preservation is essential.
 
 ## 13.3 Future Language Examples

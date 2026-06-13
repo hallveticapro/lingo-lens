@@ -8,7 +8,7 @@ describe("RSS helpers", () => {
 
   it("builds stable reading URLs and GUIDs", () => {
     expect(publicReadingUrl("https://example.com", "es-419", "super_beginner", "story")).toBe(
-      "https://example.com/read/es-419/super-beginner/story"
+      "https://example.com/read/latam/super-beginner/story"
     );
     expect(rssGuid("content-1", "es-419", "beginner")).toBe("content:content-1:locale:es-419:level:beginner");
   });

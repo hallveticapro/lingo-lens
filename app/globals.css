@@ -490,6 +490,43 @@ html.reader-leaving .reader-content {
   color: white;
 }
 
+.translation-switcher {
+  width: fit-content;
+  max-width: 100%;
+  margin: -12px auto 28px;
+  padding: 4px;
+  border: 1px solid var(--surface-highest);
+  border-radius: 999px;
+  background: var(--surface-low);
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+}
+
+.translation-switcher button {
+  min-height: 38px;
+  border: 0;
+  border-radius: 999px;
+  padding: 0 16px;
+  background: transparent;
+  color: var(--muted);
+  white-space: nowrap;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.translation-switcher button[aria-pressed="true"] {
+  background: var(--navy-deep);
+  color: white;
+}
+
+.translation-switcher button:focus-visible {
+  outline: 3px solid rgba(154, 68, 45, 0.22);
+  outline-offset: 2px;
+}
+
 .reader-body {
   font-family: var(--font-reader);
   font-size: 21px;

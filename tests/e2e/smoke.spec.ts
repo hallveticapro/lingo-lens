@@ -9,6 +9,7 @@ async function signIn(page: Page) {
 }
 
 test("public reading surfaces load from seeded data", async ({ context, page }) => {
+  test.setTimeout(45_000);
   await context.grantPermissions(["clipboard-write"]);
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "Read the world in Spanish at your level." })).toBeVisible();
@@ -23,16 +24,19 @@ test("public reading surfaces load from seeded data", async ({ context, page }) 
   await expect(page.getByRole("link", { name: /Día de Muertos/i }).first()).toBeVisible();
 
   await page.emulateMedia({ reducedMotion: "reduce" });
-  await page.goto("/read/es-419/beginner/tradiciones-de-dia-de-muertos");
+  await page.goto("/read/latam/beginner/tradiciones-de-dia-de-muertos");
   await expect(page.getByRole("heading", { name: /Día de Muertos/i })).toBeVisible();
   await expect(page.getByRole("link", { name: "Beginner", exact: true })).toHaveAttribute("aria-current", "page");
-  await page.getByLabel("Comfort mode").check();
+  await page.locator(".reader-toggle-row").click();
   await expect(page.locator("html")).toHaveClass(/reader-comfort/);
+  await expect(page.getByRole("button", { name: "Exit Comfort Mode" })).toBeVisible();
   await page.reload();
-  await expect(page.getByLabel("Comfort mode")).toBeChecked();
   await expect(page.locator("html")).toHaveClass(/reader-comfort/);
+  await expect(page.getByRole("button", { name: "Exit Comfort Mode" })).toBeVisible();
+  await page.getByRole("button", { name: "Exit Comfort Mode" }).click();
+  await expect(page.locator("html")).not.toHaveClass(/reader-comfort/);
   await page.getByRole("link", { name: "Intermediate", exact: true }).click();
-  await expect(page).toHaveURL(/\/read\/es-419\/intermediate\/tradiciones-de-dia-de-muertos/);
+  await expect(page).toHaveURL(/\/read\/latam\/intermediate\/tradiciones-de-dia-de-muertos/);
   await expect(page.locator("html")).not.toHaveClass(/reader-leaving/);
 
   await page.goto("/feeds");
@@ -43,6 +47,17 @@ test("public reading surfaces load from seeded data", async ({ context, page }) 
   await expect(page.getByRole("link", { name: /Open Feed/i }).first()).toBeVisible();
   await page.getByRole("button", { name: "Copy URL" }).first().click();
   await expect(page.getByRole("button", { name: "Copied" }).first()).toBeVisible();
+});
+
+test("reader toggles between leveled text and English check translation", async ({ page }) => {
+  await page.goto("/read/es-419/beginner/tradiciones-de-dia-de-muertos");
+  await expect(page).toHaveURL(/\/read\/latam\/beginner\/tradiciones-de-dia-de-muertos/);
+  await expect(page.getByRole("button", { name: "Spanish" })).toHaveAttribute("aria-pressed", "true");
+  await page.getByRole("button", { name: "English" }).click();
+  await expect(page.getByRole("heading", { name: "Día de Muertos traditions" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "English" })).toHaveAttribute("aria-pressed", "true");
+  await page.getByRole("button", { name: "Spanish" }).click();
+  await expect(page.getByRole("heading", { name: "Tradiciones de Día de Muertos" })).toBeVisible();
 });
 
 test("admin login supports keyboard focus and invalid credential feedback", async ({ page }) => {

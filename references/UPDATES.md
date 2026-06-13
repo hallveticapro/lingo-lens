@@ -1,5 +1,8 @@
 # Updates
 
+2026-06-13: Changed public Latin American Spanish route slugs from `es-419` to canonical `latam`, with old public URLs redirected.
+2026-06-13: Added per-level English check translations, admin review fields, generated payload support, and a public reader language toggle.
+2026-06-13: Tightened reading-level generation targets: Super Beginner now ELI5/K-1 mini-summary, Beginner ELI10/3rd grade, Intermediate ELI15, and Natural standard translation.
 2026-06-12: Completed baseline audit and converted findings into a phased implementation roadmap.
 2026-06-12: Replaced production runtime schema push/seeding with Prisma migration deployment and added the initial migration path.
 2026-06-12: Added production config, dependency, and CI quality gates, including typecheck/audit scripts, pinned dependencies, server env parsing, and Prisma config cleanup.

@@ -159,7 +159,7 @@ Must include:
 - Language selector, initially `es-419`
 - Reading-level feed cards or rows
 - Copyable feed URLs
-- Links to `/feeds/es-419/super-beginner.xml`, `/feeds/es-419/beginner.xml`, `/feeds/es-419/intermediate.xml`, `/feeds/es-419/natural.xml`
+- Links to `/feeds/latam/super-beginner.xml`, `/feeds/latam/beginner.xml`, `/feeds/latam/intermediate.xml`, `/feeds/latam/natural.xml`
 
 ## Repo and GitHub
 
@@ -263,6 +263,7 @@ Build a working proof of concept, not a mock shell.
 - Homepage lists published readings.
 - Public reading route: `/read/[locale]/[level]/[slug]`.
 - Level switcher for the same content item.
+- English check-translation switcher for the same generated level text.
 - Display source metadata.
 - Display vocabulary and comprehension questions when available.
 - Apply locale-aware `lang` and text direction.
@@ -293,6 +294,8 @@ Build a working proof of concept, not a mock shell.
 - Use server-side OpenAI integration only.
 - Generate a fact bank from the source content.
 - Generate each level from `source content + fact bank`, never from another generated level.
+- Generate the English check translation from each generated leveled adaptation, not directly from the source text.
+- Treat Super Beginner as Kindergarten/1st grade ELI5, Beginner as 3rd grade ELI10, Intermediate as ELI15, and Natural as a standard translation.
 - Validate model output with Zod.
 - Store generation jobs, model, prompt version, token counts when available, QA status, and output.
 - Include a development-safe mock generation path when `OPENAI_API_KEY` is missing.

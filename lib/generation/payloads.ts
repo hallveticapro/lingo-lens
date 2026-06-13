@@ -70,6 +70,14 @@ export const generatedSchema = z.object({
   summary: z.string().nullable().optional(),
   image_caption: z.string().nullable().optional(),
   body_markdown: z.string(),
+  check_translation: z.object({
+    locale: z.string().default("en-US"),
+    title: z.string().nullable().optional(),
+    subtitle: z.string().nullable().optional(),
+    summary: z.string().nullable().optional(),
+    image_caption: z.string().nullable().optional(),
+    body_markdown: z.string()
+  }),
   body_blocks: flexibleRecordArray((text) => ({ type: "paragraph", text })),
   vocabulary: flexibleRecordArray((text) => ({ term: text })),
   comprehension_questions: flexibleRecordArray((text) => ({ question: text, answer: "" })),

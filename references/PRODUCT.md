@@ -6,7 +6,7 @@ product
 
 ## Users
 
-LingoLens serves adult language learners who want real-world reading material at a level they can actually understand. Readers browse and read published adaptations without accounts, switch between reading levels for the same source item, and subscribe to locale-and-level-specific RSS feeds.
+LingoLens serves adult language learners who want real-world reading material at a level they can actually understand. Readers browse and read published adaptations without accounts, switch between reading levels for the same source item, compare a leveled text with its English check translation, and subscribe to locale-and-level-specific RSS feeds.
 
 It also serves admins and content editors who manually add source texts, generate target-language adaptations, review AI output, edit or regenerate individual levels, and publish only after review. Future language editors need the system to support new locales, scripts, reading frameworks, and scaffolds without schema rewrites.
 
@@ -18,7 +18,7 @@ LingoLens turns source content into multilingual, leveled reading experiences. I
 source content + target locale + reading level = adaptation
 ```
 
-The MVP starts with Latin American Spanish (`es-419`) and four levels: Super Beginner, Beginner, Intermediate, and Natural. Success means readers can discover, read, switch levels, and subscribe to feeds smoothly, while admins can create, generate, review, publish, archive, and troubleshoot adaptations safely.
+The MVP starts with Latin American Spanish (`es-419`) and four levels: Super Beginner, Beginner, Intermediate, and Natural. Success means readers can discover, read, switch levels, check comprehension against English translations, and subscribe to feeds smoothly, while admins can create, generate, review, publish, archive, and troubleshoot adaptations safely.
 
 ## Brand Personality
 

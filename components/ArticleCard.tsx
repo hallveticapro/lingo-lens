@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import type { Adaptation, ContentItem, Locale, MediaAsset, ReadingLevel } from "@prisma/client";
 import { levelKeyToSlug } from "@/lib/level";
+import { localeTagToSlug } from "@/lib/locale";
 import { shouldBypassImageOptimization } from "@/lib/media-urls";
 
 type ArticleCardAdaptation = Adaptation & {
@@ -14,6 +15,7 @@ export function ArticleCard({ adaptation }: { adaptation: ArticleCardAdaptation 
   const publisher = adaptation.contentItem.sourceName ?? "LingoLens";
   const headerMedia = adaptation.contentItem.headerMediaAsset;
   const imageUrl = headerMedia?.publicUrl;
+  const localeSlug = localeTagToSlug(adaptation.targetLocale.bcp47Tag);
 
   return (
     <article className="article-card">
@@ -36,9 +38,7 @@ export function ArticleCard({ adaptation }: { adaptation: ArticleCardAdaptation 
       </div>
       <h3>
         <Link
-          href={`/read/${adaptation.targetLocale.bcp47Tag}/${levelKeyToSlug(
-            adaptation.readingLevel.key
-          )}/${adaptation.contentItem.slug}`}
+          href={`/read/${localeSlug}/${levelKeyToSlug(adaptation.readingLevel.key)}/${adaptation.contentItem.slug}`}
         >
           {adaptation.title}
         </Link>

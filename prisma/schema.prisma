@@ -72,27 +72,27 @@ enum GenerationJobStatus {
 }
 
 model Locale {
-  id                         String               @id @default(uuid())
-  bcp47Tag                   String               @unique
-  languageCode               String
-  scriptCode                 String?
-  regionCode                 String?
-  displayNameEn              String
-  nativeName                 String?
-  direction                  TextDirection        @default(ltr)
-  segmentationStrategy       String               @default("whitespace")
-  supportsRubyAnnotations    Boolean              @default(false)
-  supportsRomanization       Boolean              @default(false)
-  defaultRomanizationSystem  String?
-  isEnabledAsSource          Boolean              @default(true)
-  isEnabledAsTarget          Boolean              @default(false)
-  isPublic                   Boolean              @default(false)
-  createdAt                  DateTime             @default(now())
-  updatedAt                  DateTime             @updatedAt
-  sourceContentItems         ContentItem[]
-  levelProfiles              LocaleLevelProfile[]
-  targetAdaptations          Adaptation[]
-  rssFeedConfigs             RssFeedConfig[]
+  id                        String               @id @default(uuid())
+  bcp47Tag                  String               @unique
+  languageCode              String
+  scriptCode                String?
+  regionCode                String?
+  displayNameEn             String
+  nativeName                String?
+  direction                 TextDirection        @default(ltr)
+  segmentationStrategy      String               @default("whitespace")
+  supportsRubyAnnotations   Boolean              @default(false)
+  supportsRomanization      Boolean              @default(false)
+  defaultRomanizationSystem String?
+  isEnabledAsSource         Boolean              @default(true)
+  isEnabledAsTarget         Boolean              @default(false)
+  isPublic                  Boolean              @default(false)
+  createdAt                 DateTime             @default(now())
+  updatedAt                 DateTime             @updatedAt
+  sourceContentItems        ContentItem[]
+  levelProfiles             LocaleLevelProfile[]
+  targetAdaptations         Adaptation[]
+  rssFeedConfigs            RssFeedConfig[]
 
   @@map("locales")
 }
@@ -134,56 +134,56 @@ model LocaleLevelProfile {
 }
 
 model ContentItem {
-  id                          String               @id @default(uuid())
-  slug                        String               @unique
-  contentType                 ContentType
-  status                      ContentStatus        @default(draft)
-  sourceLocaleId              String
-  sourceTitle                 String
-  sourceSubtitle              String?
-  sourceBody                  String
-  sourceName                  String?
-  sourceUrl                   String?
-  originalAuthor              String?
-  originalPublicationDate     DateTime?
-  headerMediaAssetId          String?
-  internalNotes               String?
-  createdBy                   String?
-  publishedAt                 DateTime?
-  archivedAt                  DateTime?
-  createdAt                   DateTime             @default(now())
-  updatedAt                   DateTime             @updatedAt
-  sourceLocale                Locale               @relation(fields: [sourceLocaleId], references: [id])
-  headerMediaAsset            MediaAsset?          @relation(fields: [headerMediaAssetId], references: [id])
-  rightsRecord                ContentRightsRecord?
-  factBank                    FactBank?
-  adaptations                 Adaptation[]
-  generationJobs              GenerationJob[]
+  id                      String               @id @default(uuid())
+  slug                    String               @unique
+  contentType             ContentType
+  status                  ContentStatus        @default(draft)
+  sourceLocaleId          String
+  sourceTitle             String
+  sourceSubtitle          String?
+  sourceBody              String
+  sourceName              String?
+  sourceUrl               String?
+  originalAuthor          String?
+  originalPublicationDate DateTime?
+  headerMediaAssetId      String?
+  internalNotes           String?
+  createdBy               String?
+  publishedAt             DateTime?
+  archivedAt              DateTime?
+  createdAt               DateTime             @default(now())
+  updatedAt               DateTime             @updatedAt
+  sourceLocale            Locale               @relation(fields: [sourceLocaleId], references: [id])
+  headerMediaAsset        MediaAsset?          @relation(fields: [headerMediaAssetId], references: [id])
+  rightsRecord            ContentRightsRecord?
+  factBank                FactBank?
+  adaptations             Adaptation[]
+  generationJobs          GenerationJob[]
 
   @@index([status, updatedAt])
   @@map("content_items")
 }
 
 model MediaAsset {
-  id                String         @id @default(uuid())
-  storageProvider   String
-  storageKey        String?
-  publicUrl         String?
-  mimeType          String?
-  fileSizeBytes     Int?
-  altText           String?
-  caption           String?
-  sourceUrl         String?
-  creatorName       String?
-  rightsStatus      RightsStatus   @default(unreviewed)
-  licenseName       String?
-  licenseUrl        String?
-  attributionText   String?
-  rightsNotes       String?
-  createdBy         String?
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
-  contentItems      ContentItem[]
+  id              String        @id @default(uuid())
+  storageProvider String
+  storageKey      String?
+  publicUrl       String?
+  mimeType        String?
+  fileSizeBytes   Int?
+  altText         String?
+  caption         String?
+  sourceUrl       String?
+  creatorName     String?
+  rightsStatus    RightsStatus  @default(unreviewed)
+  licenseName     String?
+  licenseUrl      String?
+  attributionText String?
+  rightsNotes     String?
+  createdBy       String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  contentItems    ContentItem[]
 
   @@map("media_assets")
 }
@@ -207,56 +207,62 @@ model ContentRightsRecord {
 }
 
 model FactBank {
-  id                  String       @id @default(uuid())
-  contentItemId       String       @unique
-  facts               Json         @default("[]")
-  entities            Json         @default("[]")
-  dates               Json         @default("[]")
-  numbers             Json         @default("[]")
-  quotes              Json         @default("[]")
-  sensitiveTopics     Json         @default("[]")
-  preservationNotes   Json         @default("[]")
-  generatedByJobId    String?
-  createdAt           DateTime     @default(now())
-  updatedAt           DateTime     @updatedAt
-  contentItem         ContentItem  @relation(fields: [contentItemId], references: [id], onDelete: Cascade)
+  id                String      @id @default(uuid())
+  contentItemId     String      @unique
+  facts             Json        @default("[]")
+  entities          Json        @default("[]")
+  dates             Json        @default("[]")
+  numbers           Json        @default("[]")
+  quotes            Json        @default("[]")
+  sensitiveTopics   Json        @default("[]")
+  preservationNotes Json        @default("[]")
+  generatedByJobId  String?
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  contentItem       ContentItem @relation(fields: [contentItemId], references: [id], onDelete: Cascade)
 
   @@map("fact_banks")
 }
 
 model Adaptation {
-  id                            String               @id @default(uuid())
-  contentItemId                 String
-  targetLocaleId                String
-  readingLevelId                String
-  status                        AdaptationStatus     @default(draft)
-  title                         String
-  subtitle                      String?
-  summary                       String?
-  imageCaption                  String?
-  bodyMarkdown                  String
-  bodyBlocks                    Json                 @default("[]")
-  vocabulary                    Json                 @default("[]")
-  comprehensionQuestions        Json                 @default("[]")
-  annotations                   Json                 @default("[]")
-  contentWarning                String?
-  editorNotes                   String?
-  estimatedReadingTimeSeconds   Int?
-  estimatedDifficulty           Json                 @default("{}")
-  generationJobId               String?
-  qaStatus                      QaStatus             @default(not_checked)
-  qaReport                      Json                 @default("{}")
-  reviewedBy                    String?
-  reviewedAt                    DateTime?
-  publishedAt                   DateTime?
-  archivedAt                    DateTime?
-  createdAt                     DateTime             @default(now())
-  updatedAt                     DateTime             @updatedAt
-  contentItem                   ContentItem          @relation(fields: [contentItemId], references: [id], onDelete: Cascade)
-  targetLocale                  Locale               @relation(fields: [targetLocaleId], references: [id])
-  readingLevel                  ReadingLevel         @relation(fields: [readingLevelId], references: [id])
-  generationJob                 GenerationJob?       @relation(fields: [generationJobId], references: [id])
-  revisions                     AdaptationRevision[]
+  id                           String               @id @default(uuid())
+  contentItemId                String
+  targetLocaleId               String
+  readingLevelId               String
+  status                       AdaptationStatus     @default(draft)
+  title                        String
+  subtitle                     String?
+  summary                      String?
+  imageCaption                 String?
+  bodyMarkdown                 String
+  checkTranslationLocale       String?              @default("en-US")
+  checkTranslationTitle        String?
+  checkTranslationSubtitle     String?
+  checkTranslationSummary      String?
+  checkTranslationImageCaption String?
+  checkTranslationBodyMarkdown String?
+  bodyBlocks                   Json                 @default("[]")
+  vocabulary                   Json                 @default("[]")
+  comprehensionQuestions       Json                 @default("[]")
+  annotations                  Json                 @default("[]")
+  contentWarning               String?
+  editorNotes                  String?
+  estimatedReadingTimeSeconds  Int?
+  estimatedDifficulty          Json                 @default("{}")
+  generationJobId              String?
+  qaStatus                     QaStatus             @default(not_checked)
+  qaReport                     Json                 @default("{}")
+  reviewedBy                   String?
+  reviewedAt                   DateTime?
+  publishedAt                  DateTime?
+  archivedAt                   DateTime?
+  createdAt                    DateTime             @default(now())
+  updatedAt                    DateTime             @updatedAt
+  contentItem                  ContentItem          @relation(fields: [contentItemId], references: [id], onDelete: Cascade)
+  targetLocale                 Locale               @relation(fields: [targetLocaleId], references: [id])
+  readingLevel                 ReadingLevel         @relation(fields: [readingLevelId], references: [id])
+  generationJob                GenerationJob?       @relation(fields: [generationJobId], references: [id])
+  revisions                    AdaptationRevision[]
 
   @@unique([contentItemId, targetLocaleId, readingLevelId])
   @@index([status, targetLocaleId, readingLevelId, publishedAt])
@@ -340,22 +346,28 @@ model AdminLoginThrottle {
 }
 
 model AdaptationRevision {
-  id                     String     @id @default(uuid())
-  adaptationId           String
-  revisionNumber         Int
-  title                  String
-  subtitle               String?
-  summary                String?
-  imageCaption           String?
-  bodyMarkdown           String
-  bodyBlocks             Json       @default("[]")
-  vocabulary             Json       @default("[]")
-  comprehensionQuestions Json       @default("[]")
-  annotations            Json       @default("[]")
-  changeReason           String?
-  changedBy              String?
-  createdAt              DateTime   @default(now())
-  adaptation             Adaptation @relation(fields: [adaptationId], references: [id], onDelete: Cascade)
+  id                           String     @id @default(uuid())
+  adaptationId                 String
+  revisionNumber               Int
+  title                        String
+  subtitle                     String?
+  summary                      String?
+  imageCaption                 String?
+  bodyMarkdown                 String
+  checkTranslationLocale       String?    @default("en-US")
+  checkTranslationTitle        String?
+  checkTranslationSubtitle     String?
+  checkTranslationSummary      String?
+  checkTranslationImageCaption String?
+  checkTranslationBodyMarkdown String?
+  bodyBlocks                   Json       @default("[]")
+  vocabulary                   Json       @default("[]")
+  comprehensionQuestions       Json       @default("[]")
+  annotations                  Json       @default("[]")
+  changeReason                 String?
+  changedBy                    String?
+  createdAt                    DateTime   @default(now())
+  adaptation                   Adaptation @relation(fields: [adaptationId], references: [id], onDelete: Cascade)
 
   @@unique([adaptationId, revisionNumber])
   @@map("adaptation_revisions")
