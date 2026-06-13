@@ -608,8 +608,6 @@ html.reader-comfort .top-nav,
 html.reader-comfort .site-footer,
 html.reader-comfort .level-switcher,
 html.reader-comfort .meta-line,
-html.reader-comfort .reader-hero-image,
-html.reader-comfort .caption,
 html.reader-comfort .sidebar-stack > :not(.reader-preferences) {
   display: none;
 }
@@ -637,6 +635,18 @@ html.reader-comfort .dek {
   font-size: 23px;
   line-height: 1.55;
   color: var(--muted);
+}
+
+html.reader-comfort .reader-hero-image {
+  margin: 32px 0 10px;
+  border-radius: 8px;
+}
+
+html.reader-comfort .caption {
+  margin: 0 0 34px;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 html.reader-comfort .reader-body {
