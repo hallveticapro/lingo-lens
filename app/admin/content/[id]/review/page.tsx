@@ -87,7 +87,7 @@ export default async function ReviewPage({
           </nav>
 
           <div className="review-layout">
-            <form className="form-card" action={saveAdaptationAction.bind(null, selected.id)}>
+            <form key={selected.id} className="form-card" action={saveAdaptationAction.bind(null, selected.id)}>
               {hasValidationError ? (
                 <p className="form-error form-error-banner" id="review-form-error" role="alert" aria-live="polite">
                   Add an article title and at least 20 characters of article body before saving.

@@ -107,6 +107,10 @@ test("admin content and review forms show validation recovery", async ({ page })
 
   await page.goto("/admin");
   await page.getByRole("link", { name: /Review/ }).first().click();
+  await expect(page.getByLabel("Article Title")).toHaveValue("Día de Muertos en familia");
+  await page.getByRole("link", { name: "Intermediate", exact: true }).click();
+  await expect(page.getByLabel("Article Title")).toHaveValue("Cómo las ofrendas mantienen viva la memoria");
+  await expect(page.getByLabel("Article Body")).toHaveValue(/En México y en muchas comunidades mexicanas/);
   await page.getByLabel("Article Title").fill("A");
   await page.getByLabel("Article Body").fill("Short");
   await page.getByRole("button", { name: "Save Edits" }).click();
